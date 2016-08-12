@@ -361,7 +361,7 @@ ParExpression
  = LPAR expr:Expression RPAR {return expr;}
 
 Literal
- = literal:(FloatLiteral / IntegerLiteral) {return literal;}
+ = literal:(FloatLiteral / IntegerLiteral / StringLiteral) {return literal;}
 
 // TODO - M does not allow for precision suffixes
 FloatLiteral
@@ -411,6 +411,10 @@ Keyword
 // Do we support various integer types?
 IntegerLiteral
     = Digits {return {node: 'IntegerLiteral', token: text() };}
+
+StringLiteral
+    = "'" (!['] _)* "'"
+    { return {node: 'StringLiteral', escapedValue: text() }; }
 
 Digits
     = [0-9]([_]*[0-9])*
@@ -579,3 +583,5 @@ POWER
     
 Spacing
     = [ \t]*
+
+_   = .
