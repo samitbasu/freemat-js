@@ -584,4 +584,7 @@ POWER
 Spacing
     = [ \t]*
 
+EOT = !_
+
 _   = .
+

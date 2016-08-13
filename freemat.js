@@ -5445,6 +5445,23 @@ module.exports = (function() {
       return s0;
     }
 
+    function peg$parseEOT() {
+      var s0, s1;
+
+      s0 = peg$currPos;
+      peg$silentFails++;
+      s1 = peg$parse_();
+      peg$silentFails--;
+      if (s1 === peg$FAILED) {
+        s0 = void 0;
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+
+      return s0;
+    }
+
     function peg$parse_() {
       var s0;
 
