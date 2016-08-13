@@ -285,7 +285,7 @@ ElseStatement = ELSE SEP body:Block {
   return {node: 'ElseStatement', body: body}
 }
 
-ForStatement = FOR expr:ForExpression SEP body:Block END (SEMI/SEP) {
+ForStatement = FOR expr:ForExpression (SEMI/SEP) body:Block END (SEMI/SEP) {
 	     return {
 	     node: 'ForStatement',
 	     expression: expr,

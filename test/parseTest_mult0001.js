@@ -23,8 +23,8 @@ const postop_precedences = [{op: ".'", prec: 10}, {op: "'", prec: 10}];
 const brackets = [{left: '{', right: '}', node: 'CellDefinition'},{left: '[', right: ']', node: 'MatrixDefinition'}];
 
 function singleStatementValidation(y) {
-    assert(y.node,'Block');
-    assert(y.statements.length,1);
+    assert.equal(y.node,'Block');
+    assert.equal(y.statements.length,1);
     return y;
 }
 

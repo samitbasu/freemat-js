@@ -1666,7 +1666,10 @@ module.exports = (function() {
       if (s1 !== peg$FAILED) {
         s2 = peg$parseForExpression();
         if (s2 !== peg$FAILED) {
-          s3 = peg$parseSEP();
+          s3 = peg$parseSEMI();
+          if (s3 === peg$FAILED) {
+            s3 = peg$parseSEP();
+          }
           if (s3 !== peg$FAILED) {
             s4 = peg$parseBlock();
             if (s4 !== peg$FAILED) {
