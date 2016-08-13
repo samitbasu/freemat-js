@@ -321,14 +321,14 @@ ColonExpression
  = first:AdditiveExpression rest:(COLON AdditiveExpression)* {return buildInfixExpr(first, rest,1);}
 
 AdditiveExpression
- = first:MultiplicativeExpression rest:((PLUS/MINUS) MultiplicativeExpression)* {return buildInfixExpr(first,rest);}
+ = first:MultiplicativeExpression rest:((PLUS/MINUS) MultiplicativeExpression)* {return buildInfixExpr(first,rest,1);}
 
 MultiplicativeExpression
  = first:UnaryExpression rest:((DOTTIMES / DOTRDIV / DOTLDIV / TIMES / RDIV / LDIV) UnaryExpression)*
  {return buildInfixExpr(first,rest,1);}
 
 UnaryExpression
- = operator:(PLUS/MINUS/NOT) operand:UnaryExpression {return {node: 'PrefixExpression', operator: operator[0], operand: operand};} /
+ = operator:(PLUS/MINUS/NOT) operand:UnaryExpression {return {node: 'PrefixExpression', operator: operator[1], operand: operand};} /
    PostfixExpression
 
 PostfixExpression
@@ -340,6 +340,9 @@ PowerExpression
 
 Primary
  = ParExpression / Literal / VariableDereference / MatrixDefinition / CellDefinition
+
+ParExpression
+ = LPAR expr:Expression RPAR {return expr;}
 
 MatrixDefinition
  = LBRACKET expr:ExpressionMatrix RBRACKET
@@ -354,11 +357,43 @@ ExpressionMatrix
  {return buildList(first, rest, 1);}
 
 ExpressionRow
- = first:Expression rest:((COMMA/Spacing) Expression)*
+ = first:MatExpression rest:((COMMA/Spacing) MatExpression)*
  {return buildList(first, rest, 1);}
 
-ParExpression
- = LPAR expr:Expression RPAR {return expr;}
+// This is very un-DRY, but I don't know how to inject the
+// context information (that we are inside a bracket
+// expression/matrix definition) otherwise
+
+MatExpression = expr:MatShortcutOrExpression {return expr}
+
+MatShortcutOrExpression
+ = first:MatShortcutAndExpression rest:(OROR MatShortcutAndExpression)* {return buildInfixExpr(first, rest, 1);}
+
+MatShortcutAndExpression
+ = first:MatOrExpression rest:(ANDAND MatOrExpression)* {return buildInfixExpr(first, rest, 1);}
+
+MatOrExpression
+ = first:MatAndExpression rest:(OR MatAndExpression)* {return buildInfixExpr(first, rest, 1);}
+
+MatAndExpression
+ = first:MatComparisonExpression rest:(AND MatComparisonExpression)* {return buildInfixExpr(first, rest, 1);}
+
+MatComparisonExpression
+ = first:MatColonExpression rest:((LT / GT / LE / GE / EQU / NE) MatColonExpression)* {return buildInfixExpr(first, rest, 1);}
+
+MatColonExpression
+ = first:MatAdditiveExpression rest:(COLON MatAdditiveExpression)* {return buildInfixExpr(first, rest,1);}
+
+MatAdditiveExpression
+ = first:MatMultiplicativeExpression rest:((JPLUS/JMINUS/OPLUS/OMINUS) MatMultiplicativeExpression)* {return buildInfixExpr(first,rest,0);}
+
+MatMultiplicativeExpression
+ = first:MatUnaryExpression rest:((DOTTIMES / DOTRDIV / DOTLDIV / TIMES / RDIV / LDIV) MatUnaryExpression)*
+ {return buildInfixExpr(first,rest,1);}
+
+MatUnaryExpression
+ = operator:(UPLUS/UMINUS/NOT) operand:MatUnaryExpression {return {node: 'PrefixExpression', operator: operator[1], operand: operand};} /
+   PostfixExpression
 
 Literal
  = literal:(FloatLiteral / IntegerLiteral / StringLiteral) {return literal;}
@@ -543,10 +578,28 @@ NE
     = Spacing "~=" Spacing
 
 PLUS
-    = "+" Spacing
+    = Spacing "+" Spacing
 
 MINUS
+    = Spacing "-" Spacing
+
+OPLUS
+    = [ ]+ rest:("+" [ ]+) {return rest;}
+
+OMINUS
+    = [ ]+ rest:("-" [ ]+) {return rest;}
+
+JPLUS
+    = "+" Spacing
+
+JMINUS
     = "-" Spacing
+
+UPLUS
+    = Spacing "+"
+
+UMINUS
+    = Spacing "-"
 
 DOTTIMES
     = Spacing ".*" Spacing
@@ -567,7 +620,7 @@ LDIV
     = Spacing "\\" Spacing
 
 NOT
-    = "~" !"=" Spacing
+    = Spacing "~" !"=" Spacing
 
 TRANSPOSE
     = "'" Spacing
