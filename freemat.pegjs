@@ -248,17 +248,16 @@ BreakStatement = BREAK SEMI?
 
 ContinueStatement = CONTINUE SEMI?
 
-SwitchStatement = SWITCH expr:Expression StatementSep cases:SwitchBlockStatementGroups END StatementSep {
-  return {node: 'SwitchStatement', statements: cases, expression: expr}
+// Can otherwise appear anywhere?  Can you have multiple otherwise clauses?
+SwitchStatement = SWITCH expr:Expression StatementSep cases:(CaseStatement)* otherwise:(OtherwiseStatement)? END StatementSep {
+  return {node: 'SwitchStatement', cases: cases, expression: expr, otherwise: otherwise}
 }
 
-SwitchBlockStatementGroups = blocks:SwitchBlockStatementGroup* {return [].concat.apply([], blocks);}
+CaseStatement = CASE expr:Expression StatementSep body:Block
+    {return {node: 'CaseStatement', expression: expr, body: body}}
 
-SwitchBlockStatementGroup = expr:SwitchLabel SEP blocks:Block
-  {return [{node: 'SwitchCase', expression: expr}].concat(blocks); }
-
-SwitchLabel
-    = CASE expr:Expression COLON SEP {return expr;} / OTHERWISE {return null;}
+OtherwiseStatement = OTHERWISE StatementSep body:Block
+    {return {node: 'OtherwiseStatement', body: body}}
 
 WhileStatement = WHILE expr:Expression StatementSep body:Block END StatementSep {
   return {node: 'WhileStatement', expression: expr, body: body}
