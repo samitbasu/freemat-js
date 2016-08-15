@@ -64,8 +64,8 @@ module.exports = (function() {
         peg$c16 = function(expr) { return {node: 'ThrowStatement', expression: expr} },
         peg$c17 = function(body, cat) {return {node: 'TryStatement', body: body, cat: cat}},
         peg$c18 = function(id, body) {return {node: 'CatchStatement', body: body, identifier: id}},
-        peg$c19 = function(expr, elif, els) {
-          return {node: 'IfStatement', expression: expr, elifs: elif, els: els}
+        peg$c19 = function(expr, body, elif, els) {
+          return {node: 'IfStatement', expression: expr, body: body, elifs: elif, els: els}
         },
         peg$c20 = function(expr, body) {
           return {node: 'ElseIfStatement', expression: expr, body: body}
@@ -1230,22 +1230,28 @@ module.exports = (function() {
     }
 
     function peg$parseSwitchStatement() {
-      var s0, s1, s2, s3, s4, s5;
+      var s0, s1, s2, s3, s4, s5, s6;
 
       s0 = peg$currPos;
       s1 = peg$parseSWITCH();
       if (s1 !== peg$FAILED) {
         s2 = peg$parseExpression();
         if (s2 !== peg$FAILED) {
-          s3 = peg$parseSEP();
+          s3 = peg$parseStatementSep();
           if (s3 !== peg$FAILED) {
             s4 = peg$parseSwitchBlockStatementGroups();
             if (s4 !== peg$FAILED) {
               s5 = peg$parseEND();
               if (s5 !== peg$FAILED) {
-                peg$savedPos = s0;
-                s1 = peg$c10(s2, s4);
-                s0 = s1;
+                s6 = peg$parseStatementSep();
+                if (s6 !== peg$FAILED) {
+                  peg$savedPos = s0;
+                  s1 = peg$c10(s2, s4);
+                  s0 = s1;
+                } else {
+                  peg$currPos = s0;
+                  s0 = peg$FAILED;
+                }
               } else {
                 peg$currPos = s0;
                 s0 = peg$FAILED;
@@ -1363,22 +1369,28 @@ module.exports = (function() {
     }
 
     function peg$parseWhileStatement() {
-      var s0, s1, s2, s3, s4, s5;
+      var s0, s1, s2, s3, s4, s5, s6;
 
       s0 = peg$currPos;
       s1 = peg$parseWHILE();
       if (s1 !== peg$FAILED) {
         s2 = peg$parseExpression();
         if (s2 !== peg$FAILED) {
-          s3 = peg$parseSEP();
+          s3 = peg$parseStatementSep();
           if (s3 !== peg$FAILED) {
             s4 = peg$parseBlock();
             if (s4 !== peg$FAILED) {
               s5 = peg$parseEND();
               if (s5 !== peg$FAILED) {
-                peg$savedPos = s0;
-                s1 = peg$c15(s2, s4);
-                s0 = s1;
+                s6 = peg$parseStatementSep();
+                if (s6 !== peg$FAILED) {
+                  peg$savedPos = s0;
+                  s1 = peg$c15(s2, s4);
+                  s0 = s1;
+                } else {
+                  peg$currPos = s0;
+                  s0 = peg$FAILED;
+                }
               } else {
                 peg$currPos = s0;
                 s0 = peg$FAILED;
@@ -1534,23 +1546,23 @@ module.exports = (function() {
     }
 
     function peg$parseIfStatement() {
-      var s0, s1, s2, s3, s4, s5, s6, s7;
+      var s0, s1, s2, s3, s4, s5, s6, s7, s8;
 
       s0 = peg$currPos;
       s1 = peg$parseIF();
       if (s1 !== peg$FAILED) {
         s2 = peg$parseExpression();
         if (s2 !== peg$FAILED) {
-          s3 = peg$parseSEP();
+          s3 = peg$parseStatementSep();
           if (s3 !== peg$FAILED) {
-            s4 = [];
-            s5 = peg$parseElseIfStatement();
-            while (s5 !== peg$FAILED) {
-              s4.push(s5);
-              s5 = peg$parseElseIfStatement();
-            }
+            s4 = peg$parseBlock();
             if (s4 !== peg$FAILED) {
-              s5 = peg$parseSEP();
+              s5 = [];
+              s6 = peg$parseElseIfStatement();
+              while (s6 !== peg$FAILED) {
+                s5.push(s6);
+                s6 = peg$parseElseIfStatement();
+              }
               if (s5 !== peg$FAILED) {
                 s6 = peg$parseElseStatement();
                 if (s6 === peg$FAILED) {
@@ -1559,9 +1571,15 @@ module.exports = (function() {
                 if (s6 !== peg$FAILED) {
                   s7 = peg$parseEND();
                   if (s7 !== peg$FAILED) {
-                    peg$savedPos = s0;
-                    s1 = peg$c19(s2, s4, s6);
-                    s0 = s1;
+                    s8 = peg$parseStatementSep();
+                    if (s8 !== peg$FAILED) {
+                      peg$savedPos = s0;
+                      s1 = peg$c19(s2, s4, s5, s6);
+                      s0 = s1;
+                    } else {
+                      peg$currPos = s0;
+                      s0 = peg$FAILED;
+                    }
                   } else {
                     peg$currPos = s0;
                     s0 = peg$FAILED;
@@ -1602,7 +1620,7 @@ module.exports = (function() {
       if (s1 !== peg$FAILED) {
         s2 = peg$parseExpression();
         if (s2 !== peg$FAILED) {
-          s3 = peg$parseSEP();
+          s3 = peg$parseStatementSep();
           if (s3 !== peg$FAILED) {
             s4 = peg$parseBlock();
             if (s4 !== peg$FAILED) {
@@ -1635,7 +1653,7 @@ module.exports = (function() {
       s0 = peg$currPos;
       s1 = peg$parseELSE();
       if (s1 !== peg$FAILED) {
-        s2 = peg$parseSEP();
+        s2 = peg$parseStatementSep();
         if (s2 !== peg$FAILED) {
           s3 = peg$parseBlock();
           if (s3 !== peg$FAILED) {
@@ -1666,19 +1684,13 @@ module.exports = (function() {
       if (s1 !== peg$FAILED) {
         s2 = peg$parseForExpression();
         if (s2 !== peg$FAILED) {
-          s3 = peg$parseSEMI();
-          if (s3 === peg$FAILED) {
-            s3 = peg$parseSEP();
-          }
+          s3 = peg$parseStatementSep();
           if (s3 !== peg$FAILED) {
             s4 = peg$parseBlock();
             if (s4 !== peg$FAILED) {
               s5 = peg$parseEND();
               if (s5 !== peg$FAILED) {
-                s6 = peg$parseSEMI();
-                if (s6 === peg$FAILED) {
-                  s6 = peg$parseSEP();
-                }
+                s6 = peg$parseStatementSep();
                 if (s6 !== peg$FAILED) {
                   peg$savedPos = s0;
                   s1 = peg$c22(s2, s4);
@@ -6293,6 +6305,20 @@ module.exports = (function() {
       } else {
         peg$currPos = s0;
         s0 = peg$FAILED;
+      }
+
+      return s0;
+    }
+
+    function peg$parseStatementSep() {
+      var s0;
+
+      s0 = peg$parseSEMI();
+      if (s0 === peg$FAILED) {
+        s0 = peg$parseSEP();
+        if (s0 === peg$FAILED) {
+          s0 = peg$parseCOMMA();
+        }
       }
 
       return s0;

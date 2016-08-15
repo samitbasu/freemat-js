@@ -248,7 +248,7 @@ BreakStatement = BREAK SEMI?
 
 ContinueStatement = CONTINUE SEMI?
 
-SwitchStatement = SWITCH expr:Expression SEP cases:SwitchBlockStatementGroups END {
+SwitchStatement = SWITCH expr:Expression StatementSep cases:SwitchBlockStatementGroups END StatementSep {
   return {node: 'SwitchStatement', statements: cases, expression: expr}
 }
 
@@ -260,7 +260,7 @@ SwitchBlockStatementGroup = expr:SwitchLabel SEP blocks:Block
 SwitchLabel
     = CASE expr:Expression COLON SEP {return expr;} / OTHERWISE {return null;}
 
-WhileStatement = WHILE expr:Expression SEP body:Block END {
+WhileStatement = WHILE expr:Expression StatementSep body:Block END StatementSep {
   return {node: 'WhileStatement', expression: expr, body: body}
 }
 
@@ -273,19 +273,19 @@ TryStatement = TRY SEP body:Block cat:Catch? END {return {node: 'TryStatement', 
 
 Catch = CATCH id:Identifier? SEP body:Block {return {node: 'CatchStatement', body: body, identifier: id}};
 
-IfStatement = IF expr:Expression SEP elif:(ElseIfStatement)* SEP els:ElseStatement? END {
-  return {node: 'IfStatement', expression: expr, elifs: elif, els: els}
+IfStatement = IF expr:Expression StatementSep body:Block elif:(ElseIfStatement)* els:ElseStatement? END StatementSep {
+  return {node: 'IfStatement', expression: expr, body: body, elifs: elif, els: els}
 }
 
-ElseIfStatement = ELSEIF expr:Expression SEP body:Block {
+ElseIfStatement = ELSEIF expr:Expression StatementSep body:Block {
   return {node: 'ElseIfStatement', expression: expr, body: body}
 }
 
-ElseStatement = ELSE SEP body:Block {
+ElseStatement = ELSE StatementSep body:Block {
   return {node: 'ElseStatement', body: body}
 }
 
-ForStatement = FOR expr:ForExpression (SEMI/SEP) body:Block END (SEMI/SEP) {
+ForStatement = FOR expr:ForExpression StatementSep body:Block END StatementSep {
 	     return {
 	     node: 'ForStatement',
 	     expression: expr,
@@ -633,7 +633,10 @@ HERMITIAN
 
 POWER
     = Spacing "^" Spacing
-    
+
+StatementSep
+    = (SEMI/SEP/COMMA)
+
 Spacing
     = [ \t]*
 

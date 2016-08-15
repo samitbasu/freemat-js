@@ -50,7 +50,7 @@ function validate(y,op,type='InfixExpression') {
     return y;
 }
 
-describe('parser', function() {
+describe('parser expressions', function() {
     for (let shim of shims) {
 	for (let op of matops) {
 	    const expr = "A=3"+shim.left+op+shim.right+"4;";

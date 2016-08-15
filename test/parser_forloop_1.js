@@ -11,7 +11,7 @@ const loop_cases = [{expr: 'for i=1:10; a(i) = i; end;', desc: 'simple colon'},
 		    {expr: 'for (i=1:10)\n a(i) = i; end;', desc: 'parentheses + simple colon'},
 		    {expr: 'for (i=1:10)\n end;', desc: 'parentheses + simple colon, empty block'}];
 
-describe('parser', function() {
+describe('parser for loops', function() {
     for (let lcase of loop_cases) {
 	it(`should parse for loop ${lcase.expr} with indices of ${lcase.desc}`, () => {
 	    const y = parser.parse(lcase.expr);
