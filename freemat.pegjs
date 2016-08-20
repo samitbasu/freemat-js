@@ -1,4 +1,6 @@
 {
+// Much of this came from here:
+// http://mazko.github.io/jsjavaparser/
 // TODO - Fix parse of [1 + 2] --> should be [3], not [1,+2]
 // TODO - multiplicative operator doesn't show up as the operator
 // TODO - handle continuation
@@ -203,13 +205,13 @@ BlockStatements = Statement*
 Statement = ForStatement / BreakStatement / ContinueStatement /
 	  WhileStatement / IfStatement / SwitchStatement / TryStatement /
 	  ThrowStatement / ReturnStatement / DeclarationStatement /
-	  AssignmentStatement / MultiFunctionCall / SpecialFunctionCall / NestedFunctionDef /
+	  AssignmentStatement / MultiFunctionCall / SpecialFunctionCall / FunctionDef /
 	  ExpressionStatement
 
 ExpressionStatement = expr:Expression term:SEMI?
 {return {node:'ExpressionStatement', expr: expr, term: term} }
 
-NestedFunctionDef = FUNCTION returns:(FunctionReturnSpec)? name:Identifier args:(FunctionArgs)? SEP body:Block END?
+FunctionDef = FUNCTION returns:(FunctionReturnSpec)? name:Identifier args:(FunctionArgs)? SEP body:Block END?
 {return {node:'FunctionDef', returns:returns, identifier:name, args:args, body:body} }
 
 FunctionArgs = LPAR first:Identifier rest:(COMMA AMPERSAND? Identifier)* RPAR
@@ -221,8 +223,8 @@ SpecialFunctionCall = id:Identifier Spacing (Literal / Identifier)+
 MultiFunctionCall = LBRACKET (VariableDereference COMMA?)+ RBRACKET EQ expr:Expression
 
 //TODO add initialization 
-DeclarationStatement = type:(GLOBAL / PERSISTENT) id:Identifier+
-{return {node:'DeclarationStatement', type: type, identifiers: id}}
+DeclarationStatement = type:(GLOBAL / PERSISTENT) id:Identifier+ StatementSep
+{return {node:'DeclarationStatement', type: type[0], identifiers: id}}
 
 AssignmentStatement = id:VariableDereference EQ expr:Expression (SEP/SEMI)+
 {return {node:'AssignmentStatement', identifier: id, expr: expr}}
@@ -268,9 +270,11 @@ ReturnStatement = RETURN SEMI?
 ThrowStatement = THROW expr:Expression
 { return {node: 'ThrowStatement', expression: expr} }
 
-TryStatement = TRY SEP body:Block cat:Catch? END {return {node: 'TryStatement', body: body, cat: cat}};
+TryStatement = TRY StatementSep body:Block cat:Catch? END StatementSep
+  {return {node: 'TryStatement', body: body, cat: cat}};
 
-Catch = CATCH id:Identifier? SEP body:Block {return {node: 'CatchStatement', body: body, identifier: id}};
+Catch = CATCH id:Identifier? StatementSep body:Block
+  {return {node: 'CatchStatement', body: body, identifier: id}};
 
 IfStatement = IF expr:Expression StatementSep body:Block elif:(ElseIfStatement)* els:ElseStatement? END StatementSep {
   return {node: 'IfStatement', expression: expr, body: body, elifs: elif, els: els}
@@ -409,7 +413,7 @@ Exponent
 
 Identifier
     = !Keyword first:Letter rest:$LetterOrDigit* Spacing
-    {return {identifier: first + rest, node: 'SimpleName'}; }
+    {return first + rest; }
 
 Letter = [a-z] / [A-Z] / [_];
 

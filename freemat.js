@@ -44,7 +44,7 @@ module.exports = (function() {
         },
         peg$c1 = function(expr, term) {return {node:'ExpressionStatement', expr: expr, term: term} },
         peg$c2 = function(returns, name, args, body) {return {node:'FunctionDef', returns:returns, identifier:name, args:args, body:body} },
-        peg$c3 = function(type, id) {return {node:'DeclarationStatement', type: type, identifiers: id}},
+        peg$c3 = function(type, id) {return {node:'DeclarationStatement', type: type[0], identifiers: id}},
         peg$c4 = function(id, expr) {return {node:'AssignmentStatement', identifier: id, expr: expr}},
         peg$c5 = function(id, deref) {return {node:'VariableDereference', identifier: id, deref: deref}},
         peg$c6 = function(id) {return {node:'FieldExpression', identifier: id}},
@@ -105,7 +105,7 @@ module.exports = (function() {
         peg$c39 = { type: "class", value: "[eE]", description: "[eE]" },
         peg$c40 = /^[+\-]/,
         peg$c41 = { type: "class", value: "[+\\-]", description: "[+\\-]" },
-        peg$c42 = function(first, rest) {return {identifier: first + rest, node: 'SimpleName'}; },
+        peg$c42 = function(first, rest) {return first + rest; },
         peg$c43 = /^[a-z]/,
         peg$c44 = { type: "class", value: "[a-z]", description: "[a-z]" },
         peg$c45 = /^[A-Z]/,
@@ -522,7 +522,7 @@ module.exports = (function() {
                             if (s0 === peg$FAILED) {
                               s0 = peg$parseSpecialFunctionCall();
                               if (s0 === peg$FAILED) {
-                                s0 = peg$parseNestedFunctionDef();
+                                s0 = peg$parseFunctionDef();
                                 if (s0 === peg$FAILED) {
                                   s0 = peg$parseExpressionStatement();
                                 }
@@ -569,7 +569,7 @@ module.exports = (function() {
       return s0;
     }
 
-    function peg$parseNestedFunctionDef() {
+    function peg$parseFunctionDef() {
       var s0, s1, s2, s3, s4, s5, s6, s7;
 
       s0 = peg$currPos;
@@ -952,9 +952,15 @@ module.exports = (function() {
           s2 = peg$FAILED;
         }
         if (s2 !== peg$FAILED) {
-          peg$savedPos = s0;
-          s1 = peg$c3(s1, s2);
-          s0 = s1;
+          s3 = peg$parseStatementSep();
+          if (s3 !== peg$FAILED) {
+            peg$savedPos = s0;
+            s1 = peg$c3(s1, s2);
+            s0 = s1;
+          } else {
+            peg$currPos = s0;
+            s0 = peg$FAILED;
+          }
         } else {
           peg$currPos = s0;
           s0 = peg$FAILED;
@@ -1449,12 +1455,12 @@ module.exports = (function() {
     }
 
     function peg$parseTryStatement() {
-      var s0, s1, s2, s3, s4, s5;
+      var s0, s1, s2, s3, s4, s5, s6;
 
       s0 = peg$currPos;
       s1 = peg$parseTRY();
       if (s1 !== peg$FAILED) {
-        s2 = peg$parseSEP();
+        s2 = peg$parseStatementSep();
         if (s2 !== peg$FAILED) {
           s3 = peg$parseBlock();
           if (s3 !== peg$FAILED) {
@@ -1465,9 +1471,15 @@ module.exports = (function() {
             if (s4 !== peg$FAILED) {
               s5 = peg$parseEND();
               if (s5 !== peg$FAILED) {
-                peg$savedPos = s0;
-                s1 = peg$c15(s3, s4);
-                s0 = s1;
+                s6 = peg$parseStatementSep();
+                if (s6 !== peg$FAILED) {
+                  peg$savedPos = s0;
+                  s1 = peg$c15(s3, s4);
+                  s0 = s1;
+                } else {
+                  peg$currPos = s0;
+                  s0 = peg$FAILED;
+                }
               } else {
                 peg$currPos = s0;
                 s0 = peg$FAILED;
@@ -1503,7 +1515,7 @@ module.exports = (function() {
           s2 = null;
         }
         if (s2 !== peg$FAILED) {
-          s3 = peg$parseSEP();
+          s3 = peg$parseStatementSep();
           if (s3 !== peg$FAILED) {
             s4 = peg$parseBlock();
             if (s4 !== peg$FAILED) {
@@ -6366,6 +6378,8 @@ module.exports = (function() {
     }
 
 
+    // Much of this came from here:
+    // http://mazko.github.io/jsjavaparser/
     // TODO - Fix parse of [1 + 2] --> should be [3], not [1,+2]
     // TODO - multiplicative operator doesn't show up as the operator
     // TODO - handle continuation

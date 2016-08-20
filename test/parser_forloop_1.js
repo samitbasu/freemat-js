@@ -21,7 +21,7 @@ describe('parser for loops', function() {
 	    assert.equal(f.node,'ForStatement');
 	    assert.equal(f.body.node,'Block');
 	    assert.equal(f.expression.node,'ForExpression');
-	    assert.equal(f.expression.identifier.identifier,'i');
+	    assert.equal(f.expression.identifier,'i');
 	});
     }
 });
