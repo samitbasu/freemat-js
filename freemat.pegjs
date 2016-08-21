@@ -1,9 +1,9 @@
 {
-// Much of this came from here:
-// http://mazko.github.io/jsjavaparser/
-// TODO - Fix parse of [1 + 2] --> should be [3], not [1,+2]
-// TODO - multiplicative operator doesn't show up as the operator
-// TODO - handle continuation
+  "use strict"
+
+  // Much of this came from here:
+  // http://mazko.github.io/jsjavaparser/
+  // TODO - handle continuation
 
   function extractOptional(optional, index, def) {
     def = typeof def !== 'undefined' ?  def : null;
@@ -205,10 +205,10 @@ BlockStatements = Statement*
 Statement = ForStatement / BreakStatement / ContinueStatement /
 	  WhileStatement / IfStatement / SwitchStatement / TryStatement /
 	  ThrowStatement / ReturnStatement / DeclarationStatement /
-	  AssignmentStatement / MultiFunctionCall / SpecialFunctionCall / FunctionDef /
-	  ExpressionStatement
+	  AssignmentStatement / MultiAssignment / FunctionDef /
+	  SpecialFunctionCall / ExpressionStatement
 
-ExpressionStatement = expr:Expression term:SEMI?
+ExpressionStatement = expr:Expression term:StatementSep
 {return {node:'ExpressionStatement', expr: expr, term: term} }
 
 FunctionDef = FUNCTION returns:(FunctionReturnSpec)? name:Identifier args:(FunctionArgs)? SEP body:Block END?
@@ -218,21 +218,23 @@ FunctionArgs = LPAR first:Identifier rest:(COMMA AMPERSAND? Identifier)* RPAR
 
 FunctionReturnSpec = id:Identifier EQ / LBRACKET Identifier (COMMA Identifier)* RBRACKET EQ
 
-SpecialFunctionCall = id:Identifier Spacing (Literal / Identifier)+
+SpecialFunctionCall = id:Identifier Spacing first:Blob rest:(Spacing Blob)* StatementSep
+{return {node:'SpecialFunctionCall', func: id, args: buildList(first, rest, 1)}}
 
-MultiFunctionCall = LBRACKET (VariableDereference COMMA?)+ RBRACKET EQ expr:Expression
+MultiAssignment = LBRACKET  first:VariableDereference rest:(COMMA? VariableDereference)* RBRACKET EQ expr:Expression StatementSep
+{return {node:'MultiAssignmentStatement', lhs: buildList(first, rest, 1), expr: expr}}
 
 //TODO add initialization 
 DeclarationStatement = type:(GLOBAL / PERSISTENT) id:Identifier+ StatementSep
 {return {node:'DeclarationStatement', type: type[0], identifiers: id}}
 
-AssignmentStatement = id:VariableDereference EQ expr:Expression (SEP/SEMI)+
-{return {node:'AssignmentStatement', identifier: id, expr: expr}}
+AssignmentStatement = lhs:VariableDereference EQ expr:Expression (SEP/SEMI)+
+{return {node:'AssignmentStatement', lhs: lhs, expr: expr}}
 
 VariableDereference = id:Identifier deref:(DereferenceExpression)*
 {return {node:'VariableDereference', identifier: id, deref: deref}}
 
-DereferenceExpression = FieldExpression / DynamicFieldExpression / ArraySubsetExpression / CellSubsetExpression;
+DereferenceExpression = FieldExpression / DynamicFieldExpression / ArrayIndexExpression / CellIndexExpression;
 
 FieldExpression = DOT id:Identifier
 {return {node:'FieldExpression', identifier: id}}
@@ -240,11 +242,11 @@ FieldExpression = DOT id:Identifier
 DynamicFieldExpression = DOT LPAR expr:Expression RPAR
 {return {node:'DynamicFieldExpression', expression: expr}}
 
-ArraySubsetExpression = LPAR expr:Expression RPAR
+ArrayIndexExpression = LPAR expr:(Expression)? RPAR
 {return {node:'ArrayIndexExpression', expression: expr}}
 
-CellSubsetExpression = LWING expr:Expression RWING
-{return {node: 'CellSubsetExpression', expression: expr}}
+CellIndexExpression = LWING expr:Expression RWING
+{return {node: 'CellIndexExpression', expression: expr}}
 
 BreakStatement = BREAK SEMI?
 
@@ -410,6 +412,16 @@ FloatLiteral
 
 Exponent
     = [eE] [+\-]? Digits
+
+Blob
+    = !IsolatedOperator first:NotSpace rest:$NotSpace*
+    {return first + rest; }
+
+IsolatedOperator
+    = ( "||" / "&&" / "|" / "&" / "<=" / ">=" / "<" / ">" / "~=" / "+" / "-" / ".*" / "./" / ".\\" / "*" / "/" / "\\" / ".^" / "'" / ".'" / "^" / "==" ) [ ]+
+
+NotSpace
+    = [^ \t\n;]
 
 Identifier
     = !Keyword first:Letter rest:$LetterOrDigit* Spacing
@@ -638,7 +650,7 @@ POWER
     = Spacing "^" Spacing
 
 StatementSep
-    = (SEMI/SEP/COMMA)
+    = (SEMI/[\n]/COMMA) Spacing
 
 Spacing
     = [ \t]*
