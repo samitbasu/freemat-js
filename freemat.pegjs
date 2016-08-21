@@ -211,12 +211,31 @@ Statement = ForStatement / BreakStatement / ContinueStatement /
 ExpressionStatement = expr:Expression term:StatementSep
 {return {node:'ExpressionStatement', expr: expr, term: term} }
 
-FunctionDef = FUNCTION returns:(FunctionReturnSpec)? name:Identifier args:(FunctionArgs)? SEP body:Block END?
-{return {node:'FunctionDef', returns:returns, identifier:name, args:args, body:body} }
+FunctionDef = FUNCTION rets:(FunctionReturnSpec)? name:Identifier
+	    args:(FunctionNoArgs/FunctionArgs)? StatementSep body:Block (END StatementSep)?
+{return {node:'FunctionDefinition',
+	returns: (rets ? rets : []),
+	name: name,
+	args: (args ? args : []),
+	body: body} }
 
-FunctionArgs = LPAR first:Identifier rest:(COMMA AMPERSAND? Identifier)* RPAR
+FunctionNoArgs = LPAR RPAR
+{return []}
 
-FunctionReturnSpec = id:Identifier EQ / LBRACKET Identifier (COMMA Identifier)* RBRACKET EQ
+FunctionArgs = LPAR first:FunctionArg rest:(COMMA FunctionArg)* RPAR
+{return buildList(first, rest, 1);}
+
+FunctionArg = (amp:AMPERSAND? id:Identifier) {return (amp ? amp[0] : '')+id} / NOT {return "~"}
+
+FunctionReturnSpec = FunctionSingleReturn / FunctionMultiReturn / FunctionNoReturn
+
+FunctionSingleReturn = id:Identifier EQ
+{return id}
+
+FunctionNoReturn = LBRACKET RBRACKET EQ {return [];}
+
+FunctionMultiReturn = LBRACKET first:Identifier rest:(COMMA? Identifier)* RBRACKET EQ
+{return buildList(first, rest, 1);}
 
 SpecialFunctionCall = id:Identifier Spacing first:Blob rest:(Spacing Blob)* StatementSep
 {return {node:'SpecialFunctionCall', func: id, args: buildList(first, rest, 1)}}
