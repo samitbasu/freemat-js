@@ -74,10 +74,10 @@ module.exports = (function() {
           return {node: 'ElseStatement', body: body}
         },
         peg$c22 = function(expr, body) {
-        	     return {
-        	     node: 'ForStatement',
-        	     expression: expr,
-        	     body: body }
+                     return {
+                     node: 'ForStatement',
+                     expression: expr,
+                     body: body }
         },
         peg$c23 = function(id, expr) {
            return {

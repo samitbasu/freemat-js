@@ -203,10 +203,10 @@ Block = statements:BlockStatements {
 BlockStatements = Statement*
 
 Statement = ForStatement / BreakStatement / ContinueStatement /
-	  WhileStatement / IfStatement / SwitchStatement / TryStatement /
-	  ThrowStatement / ReturnStatement / DeclarationStatement /
-	  AssignmentStatement / MultiAssignment / FunctionDef /
-	  SpecialFunctionCall / ExpressionStatement
+          WhileStatement / IfStatement / SwitchStatement / TryStatement /
+          ThrowStatement / ReturnStatement / DeclarationStatement /
+          AssignmentStatement / MultiAssignment / FunctionDef /
+          SpecialFunctionCall / ExpressionStatement
 
 ExpressionStatement = expr:Expression term:StatementSep
 {return {node:'ExpressionStatement', expr: expr, term: term} }
@@ -291,10 +291,10 @@ ElseStatement = ELSE StatementSep body:Block {
 }
 
 ForStatement = FOR expr:ForExpression StatementSep body:Block END StatementSep {
-	     return {
-	     node: 'ForStatement',
-	     expression: expr,
-	     body: body }
+             return {
+             node: 'ForStatement',
+             expression: expr,
+             body: body }
 }
 
 ForExpression = id:Identifier EQ expr:Expression {
