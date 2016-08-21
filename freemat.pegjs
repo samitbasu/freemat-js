@@ -482,8 +482,11 @@ IntegerLiteral
     = Digits {return {node: 'IntegerLiteral', token: text() };}
 
 StringLiteral
-    = "'" (!['] _)* "'"
+    = "'" (!['] _/EscapedQuote)* "'"
     { return {node: 'StringLiteral', escapedValue: text() }; }
+
+EscapedQuote
+    = "'''"
 
 Digits
     = [0-9]([_]*[0-9])*
