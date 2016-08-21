@@ -206,7 +206,7 @@ Statement = ForStatement / BreakStatement / ContinueStatement /
           WhileStatement / IfStatement / SwitchStatement / TryStatement /
           ThrowStatement / ReturnStatement / DeclarationStatement /
           AssignmentStatement / MultiAssignment / FunctionDef /
-          SpecialFunctionCall / ExpressionStatement
+          SpecialFunctionCall / ExpressionStatement / StatementSep
 
 ExpressionStatement = expr:Expression term:StatementSep
 {return {node:'ExpressionStatement', expr: expr, term: term} }
@@ -247,7 +247,7 @@ MultiAssignment = LBRACKET  first:VariableDereference rest:(COMMA? VariableDeref
 DeclarationStatement = type:(GLOBAL / PERSISTENT) id:Identifier+ StatementSep
 {return {node:'DeclarationStatement', type: type[0], identifiers: id}}
 
-AssignmentStatement = lhs:VariableDereference EQ expr:Expression (SEP/SEMI)+
+AssignmentStatement = lhs:VariableDereference EQ expr:Expression StatementSep
 {return {node:'AssignmentStatement', lhs: lhs, expr: expr}}
 
 VariableDereference = id:Identifier deref:(DereferenceExpression)*
@@ -672,7 +672,10 @@ POWER
     = Spacing "^" Spacing
 
 StatementSep
-    = (SEMI/[\n]/COMMA) Spacing
+    = (SEMI/[\n]/COMMA/Comment) Spacing Comment? {return [];}
+
+Comment
+    = "%" (![\r\n] _)* [\r\n] {return [];}
 
 Spacing
     = [ \t]*

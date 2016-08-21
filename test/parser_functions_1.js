@@ -24,9 +24,9 @@ describe('parser function declaration', function() {
             assert.equal(f.returns[1],'B');
             assert.equal(f.returns[2],'C');
             assert.equal(f.args.length,3);
-	    assert.equal(f.args[0],'X');
-	    assert.equal(f.args[1],'Y');
-	    assert.equal(f.args[2],'&Z');
+            assert.equal(f.args[0],'X');
+            assert.equal(f.args[1],'Y');
+            assert.equal(f.args[2],'&Z');
         });
     }
     const empty_functions = ['function [] = foo(); end;',
@@ -38,15 +38,15 @@ describe('parser function declaration', function() {
             const f = validate_function(parser.parse(empty));
             assert.equal(f.returns.length,0);
             assert.equal(f.args.length,0);
-	    assert.equal(f.name,'foo');
+            assert.equal(f.name,'foo');
         });
     }
     it('should handle an optional end: function y = foo(x); y = x;', () => {
-	const f = validate_function(parser.parse('function y = foo(x); y = x;'));
-	assert.equal(f.returns.length,1);
-	assert.equal(f.args.length,1);
-	assert.equal(f.name,'foo');
-	assert.equal(f.body.node,'Block');
-	assert.equal(f.body.statements.length,1);
+        const f = validate_function(parser.parse('function y = foo(x); y = x;'));
+        assert.equal(f.returns.length,1);
+        assert.equal(f.args.length,1);
+        assert.equal(f.name,'foo');
+        assert.equal(f.body.node,'Block');
+        assert.equal(f.body.statements.length,1);
     });
 });
