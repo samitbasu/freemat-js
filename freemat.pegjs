@@ -196,11 +196,13 @@
 Block = statements:BlockStatements {
       return {
       	     node: 'Block',
-	     statements: statements
+	     statements: statements.filter(x => !(x instanceof Array && x.length == 0))
 	     }
 }
 
-BlockStatements = Statement*
+BlockStatements = SpacedStatement*
+
+SpacedStatement = Spacing state:Statement {return state;}
 
 Statement = ForStatement / BreakStatement / ContinueStatement /
           WhileStatement / IfStatement / SwitchStatement / TryStatement /
@@ -672,13 +674,22 @@ POWER
     = Spacing "^" Spacing
 
 StatementSep
-    = (SEMI/[\n]/COMMA/Comment) Spacing Comment? {return [];}
+    = Comment / StateSep / (Continuation StatementSep)
+    
+StateSep
+    = Spacing (SEMI/[\n]/COMMA) Spacing Comment? {return [];}
 
 Comment
-    = "%" (![\r\n] _)* [\r\n] {return [];}
+    = Spacing "%" (![\r\n] _)* [\r\n] {return [];}
 
 Spacing
-    = [ \t]*
+    = SpacingElement*
+
+SpacingElement
+    = [ \t]/Continuation
+
+Continuation
+    = "..." (![\r\n] _)* [\r\n] {return [];}
 
 EOT = !_
 

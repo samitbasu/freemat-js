@@ -61,6 +61,24 @@ describe('parser expressions', function() {
         }
     }
     for (let shim of shims) {
+        for (let op of matops) {
+            const expr = `A=3${shim.left}${op}${shim.right}4\n`;
+            it(`should have operator symbol ${op} as the root expression ${expr} with ${shim.desc} (no semicolon)`,
+               () => {
+                   validate(parser.parse(expr),op);
+               });
+        }
+    }
+    for (let shim of shims) {
+        for (let op of matops) {
+            const expr = `A=3${shim.left}${op}${shim.right}4  \n`;
+            it(`should have operator symbol ${op} as the root expression ${expr} with ${shim.desc} (no semicolon,+spaces)`,
+               () => {
+                   validate(parser.parse(expr),op);
+               });
+        }
+    }
+    for (let shim of shims) {
         for (let op of allops) {
             const expr = `A=D${shim.left}${op}${shim.right}F;`;
             it(`should have operator symbol ${op} as the root expression ${expr} with ${shim.desc}`,
