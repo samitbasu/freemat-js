@@ -229,8 +229,9 @@ ClassSupersList = first:Identifier rest:(AND Identifier)* {return buildList(firs
 
 classBlocks = classBlock*
 
-//classBlock = PropertyBlock / MethodBlock / EventBlock / EnumerationBlock
-classBlock = PropertyBlock / MethodBlock
+// classBlock = PropertyBlock / MethodBlock / EventBlock / EnumerationBlock
+
+classBlock = PropertyBlock / MethodBlock / EventBlock / EnumerationBlock
 
 PropertyBlock = PROPERTIES attr:(Attributes)? StatementSep props:(PropertyList)? END StatementSep
 {return {node: "PropertyBlock",
@@ -249,6 +250,26 @@ MethodBlock = METHODS attr:(Attributes)? StatementSep methods:(MethodList)? END 
 MethodList = first:Method rest:(Method)* {return [first].concat(rest);}
 
 Method = FunctionDef
+
+EventBlock = EVENTS attr:(Attributes)? StatementSep events:(EventList)? StatementSep END StatementSep
+{return {node: "EventBlock",
+        attributes: (attr ? attr : []),
+        events: (events ? events : [])};}
+
+EventList = first:Identifier rest:(StatementSep Identifier)* {return buildList(first,rest,1);}
+
+EnumerationBlock = ENUMERATION StatementSep enums:(EnumerationList)? StatementSep END StatementSep
+{return {node: "EnumerationBlock",
+         enums: (enums ? enums : [])};}
+
+EnumerationList = first:Enumeration rest:(StatementSep Enumeration)* {return buildList(first,rest,1);}
+
+Enumeration = id:Identifier init:(LPAR ExpressionList RPAR)?
+{return {node: "Enumeration",
+         name: id,
+         init: (init ? init[1] : [])};}
+
+ExpressionList = first:Expression rest:(COMMA Expression)* {return buildList(first,rest,1);}
 
 ExpressionStatement = expr:Expression term:StatementSep
 {return {node:'ExpressionStatement', expr: expr, term: term} }
@@ -533,8 +554,14 @@ Digits
 SEMI
     = ";" Spacing
 
+EVENTS
+    = ("EVENTS"/"events") Spacing
+
 METHODS
     = ("METHODS"/"methods") Spacing
+
+ENUMERATION
+    = ("ENUMERATION"/"enumeration") Spacing
 
 PROPERTIES
     = ("PROPERTIES"/"properties") Spacing

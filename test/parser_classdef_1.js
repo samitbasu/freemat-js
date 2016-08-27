@@ -194,4 +194,47 @@ describe('parser function declaration', function() {
         assert.equal(f.blocks[1].methods[0].node,'FunctionDefinition');
         assert.equal(f.blocks[1].methods[0].name,'baz');
     });
+    const cdef12 = `
+    classdef foo
+      events (attr1, attr2)
+        DoIt
+        DoItAgain, OrNot
+      end
+    end
+    `;
+    it(`should allow for events blocks:\n${cdef12}`, () => {
+        const f = validate_classdef(parser.parse(cdef12));
+        assert.equal(f.blocks.length,1);
+        assert.equal(f.blocks[0].node,'EventBlock');
+        assert.equal(f.blocks[0].attributes.length,2);
+        assert.equal(f.blocks[0].events.length,3);
+        assert.equal(f.blocks[0].events[0],'DoIt');
+        assert.equal(f.blocks[0].events[1],'DoItAgain');
+        assert.equal(f.blocks[0].events[2],'OrNot');
+    });
+    const cdef13 = `
+    classdef foo
+      enumeration
+        Red (1,0,0)
+        Blue (0,0,1)
+        Green(0,1,0)
+      end
+    end
+    `;
+    it(`should handle enumerations in the class:\n${cdef13}`, () => {
+        const f = validate_classdef(parser.parse(cdef13));
+        assert.equal(f.blocks.length,1);
+        const g = f.blocks[0];
+        assert.equal(g.node,'EnumerationBlock');
+        assert.equal(g.enums.length,3);
+        assert.equal(g.enums[0].name,'Red');
+        assert.equal(g.enums[1].name,'Blue');
+        assert.equal(g.enums[2].name,'Green');
+        assert.equal(g.enums[0].init.length,3);
+        assert.equal(g.enums[1].init.length,3);
+        assert.equal(g.enums[2].init.length,3);
+        assert.equal(g.enums[0].init[0].token,'1');
+        assert.equal(g.enums[1].init[2].token,'1');
+        assert.equal(g.enums[2].init[1].token,'1');
+    });
 });
