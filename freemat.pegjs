@@ -207,8 +207,37 @@ SpacedStatement = Spacing state:Statement {return state;}
 Statement = ForStatement / BreakStatement / ContinueStatement /
           WhileStatement / IfStatement / SwitchStatement / TryStatement /
           ThrowStatement / ReturnStatement / DeclarationStatement /
-          AssignmentStatement / MultiAssignment / FunctionDef /
+          AssignmentStatement / MultiAssignment / FunctionDef /  ClassDef /
           SpecialFunctionCall / ExpressionStatement / StatementSep
+
+ClassDef = CLASSDEF attr:(Attributes)? name:Identifier supe:(ClassSupers)? StatementSep blocks:classBlocks END StatementSep
+           {return {node:'ClassDefinition',
+                    attributes:attr,
+                    name: name,
+                    sup: supe,
+                    blocks: blocks};}
+
+Attributes = LPAR AttributeList RPAR
+
+AttributeList = first:Attribute rest:(COMMA Attribute)* {return buildList(first,rest,1);}
+
+Attribute = id:Identifier init:(EQ expr:Expression)? {return {node: Attribute, identifier: id, init: init};}
+
+classBlocks = classBlock*
+
+//classBlock = PropertyBlock / MethodBlock / EventBlock / EnumerationBlock
+classBlock = PropertyBlock
+
+ClassSupers = LT sups:ClassSupersList {return sups;}
+
+ClassSupersList = first:Identifier rest:(AND Identifier) {return buildList(first,rest,1);}
+
+PropertyBlock = PROPERTIES attr:(Attributes)? StatementSep props:(PropertyList)? END StatementSep
+{return {node: "PropertyBlock", attributes: attr, properties: props};}
+
+PropertyList = first:Property rest:(Property)* {return [first].concat(rest);}
+
+Property = id:Identifier init:(EQ expr:Expression)? StatementSep {return {node: "Property", identifier: id, init: (init ? init[1] : [])};}
 
 ExpressionStatement = expr:Expression term:StatementSep
 {return {node:'ExpressionStatement', expr: expr, term: term} }
@@ -461,16 +490,13 @@ Keyword
    "else" /
    "elseif" /
    "end" /
-   "events" /
    "for" /
    "function" /
    "global" /
    "if" /
    "keyboard" /
-   "methods" /
    "otherwise" /
    "persistent" /
-   "properties" /
    "quit" /
    "retall" /
    "return" /
@@ -496,6 +522,12 @@ Digits
 SEMI
     = ";" Spacing
 
+PROPERTIES
+    = ("PROPERTIES"/"properties") Spacing
+
+CLASSDEF
+    = ("CLASSDEF"/"classdef") Spacing
+
 GLOBAL
     = ("GLOBAL"/"global") Spacing
 
@@ -509,7 +541,7 @@ SEP
     = [ \t]*[\r\n]+ Spacing
 
 END
-    = ("END"/"end") Spacing
+    = Spacing ("END"/"end") Spacing
 
 BREAK
     = ("BREAK"/"break") Spacing
@@ -673,11 +705,15 @@ HERMITIAN
 POWER
     = Spacing "^" Spacing
 
+// Statement separation is tricky.
+// You can have a comment terminate a statement:
+//   a = foo   
+
 StatementSep
     = Comment / StateSep / (Continuation StatementSep)
-    
+
 StateSep
-    = Spacing (SEMI/[\n]/COMMA) Spacing Comment? {return [];}
+    = Spacing (SEMI/[\n]/COMMA) Spacing Comment? ([\r\n])*{return [];}
 
 Comment
     = Spacing "%" (![\r\n] _)* [\r\n] {return [];}
