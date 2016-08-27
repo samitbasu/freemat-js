@@ -41,8 +41,8 @@ describe('parser function declaration', function() {
             assert.equal(f.name,'foo');
         });
     }
-    it('should handle an optional end: function y = foo(x); y = x;', () => {
-        const f = validate_function(parser.parse('function y = foo(x); y = x;'));
+    it('should handle an optional end: function yp = foo(x); yp = x;', () => {
+        const f = validate_function(parser.parse('function yp = foo(x); yp = x;'));
         assert.equal(f.returns.length,1);
         assert.equal(f.args.length,1);
         assert.equal(f.name,'foo');

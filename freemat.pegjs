@@ -212,32 +212,43 @@ Statement = ForStatement / BreakStatement / ContinueStatement /
 
 ClassDef = CLASSDEF attr:(Attributes)? name:Identifier supe:(ClassSupers)? StatementSep blocks:classBlocks END StatementSep
            {return {node:'ClassDefinition',
-                    attributes:attr,
+                    attributes: (attr ? attr : []),
                     name: name,
                     sup: supe,
                     blocks: blocks};}
 
-Attributes = LPAR AttributeList RPAR
+Attributes = LPAR list:AttributeList RPAR {return list;}
 
 AttributeList = first:Attribute rest:(COMMA Attribute)* {return buildList(first,rest,1);}
 
-Attribute = id:Identifier init:(EQ expr:Expression)? {return {node: Attribute, identifier: id, init: init};}
+Attribute = id:Identifier init:(EQ Expression)? {return {node: "Attribute", identifier: id, init: (init ? init[1] : [])};}
+
+ClassSupers = LT sups:ClassSupersList {return sups;}
+
+ClassSupersList = first:Identifier rest:(AND Identifier)* {return buildList(first,rest,1);}
 
 classBlocks = classBlock*
 
 //classBlock = PropertyBlock / MethodBlock / EventBlock / EnumerationBlock
-classBlock = PropertyBlock
-
-ClassSupers = LT sups:ClassSupersList {return sups;}
-
-ClassSupersList = first:Identifier rest:(AND Identifier) {return buildList(first,rest,1);}
+classBlock = PropertyBlock / MethodBlock
 
 PropertyBlock = PROPERTIES attr:(Attributes)? StatementSep props:(PropertyList)? END StatementSep
-{return {node: "PropertyBlock", attributes: attr, properties: props};}
+{return {node: "PropertyBlock",
+        attributes: (attr ? attr : []),
+        properties: (props ? props : [])};}
 
 PropertyList = first:Property rest:(Property)* {return [first].concat(rest);}
 
 Property = id:Identifier init:(EQ expr:Expression)? StatementSep {return {node: "Property", identifier: id, init: (init ? init[1] : [])};}
+
+MethodBlock = METHODS attr:(Attributes)? StatementSep methods:(MethodList)? END StatementSep
+{return {node: "MethodBlock",
+        attributes: (attr ? attr : []),
+        methods: (methods ? methods : [])};}
+
+MethodList = first:Method rest:(Method)* {return [first].concat(rest);}
+
+Method = FunctionDef
 
 ExpressionStatement = expr:Expression term:StatementSep
 {return {node:'ExpressionStatement', expr: expr, term: term} }
@@ -261,7 +272,7 @@ FunctionArg = (amp:AMPERSAND? id:Identifier) {return (amp ? amp[0] : '')+id} / N
 FunctionReturnSpec = FunctionSingleReturn / FunctionMultiReturn / FunctionNoReturn
 
 FunctionSingleReturn = id:Identifier EQ
-{return id}
+{return [id]}
 
 FunctionNoReturn = LBRACKET RBRACKET EQ {return [];}
 
@@ -521,6 +532,9 @@ Digits
 
 SEMI
     = ";" Spacing
+
+METHODS
+    = ("METHODS"/"methods") Spacing
 
 PROPERTIES
     = ("PROPERTIES"/"properties") Spacing
