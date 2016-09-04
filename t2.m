@@ -3,4 +3,8 @@
         function x = bar()
         end
       end
+      events (attr3, att4)
+        DoIt
+        DoItAgain
+      end
     end

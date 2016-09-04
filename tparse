@@ -3,5 +3,11 @@ const p = require('./freemat.js');
 const fs = require('fs');
 const txt = fs.readFileSync(process.argv[2], 'utf8');
 console.log(`parse string:\n***\n${txt}***\n`);
-const y = p.parse(txt);
-console.log(JSON.stringify(y, null, 2));
+try {
+    const y = p.parse(txt);
+    console.log(JSON.stringify(y, null, 2));
+} catch (e) {
+    console.log(e);
+    const txtcopy = txt.substring(0,e.location.start.offset) + "**" + txt.substring(e.location.end.offset);
+    console.log(txtcopy);
+}
