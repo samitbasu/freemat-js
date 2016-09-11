@@ -58,7 +58,7 @@ function is_complex(x) {
 }
 
 function is_scalar(x) {
-    return ((x instanceof DoubleScalar) || (typeof(x) === 'number'));
+    return ((typeof(x) === 'number') || (x.is_scalar));
 }
 
 function real_part(x) {
@@ -96,37 +96,43 @@ function allocate(len) {
 class DoubleArray {
     constructor(dims, real = null) {
         this.dims = dims;
-        let len = count(dims);
+        this.length = count(dims);
         if (real)
             this.real = real;
         else
-            this.real = allocate(len);
+            this.real = allocate(this.length);
         this.imag = [];
-        this.complex_flag = false;
+        this.is_complex = false;
+        this.is_scalar = false;
     }
     complexify() {
-        if (this.complex_flag) return;
-        this.imag = allocate(count(this.dims));
-        this.complex_flag = true;
+        if (this.is_complex) return this;
+        this.imag = allocate(this.length);
+        this.is_complex = true;
+        return this;
     }
     get(where) {
-        if (where.every(is_scalar)) {
-            let ndx = compute_ndx(this.dims,where);
-            if (!this.complex_flag)
-                return make_scalar(this.real[ndx]);
-            else
-                return make_scalar(this.real[ndx],this.imag[ndx]);
+        let ndx = 0;
+        if (where.is_scalar) {
+            ndx = where - 1;
+        } else if (where.every(is_scalar)) {
+            ndx = compute_ndx(this.dims,where);
+        } else {
+            throw "unhandled case for get in DoubleArray";
         }
-        throw "unhandled case for get in DoubleArray";
+        if (!this.is_complex)
+            return make_scalar(this.real[ndx]);
+        else
+            return make_scalar(this.real[ndx],this.imag[ndx]);
     }
     set(where,what) {
         const scalar_case = where.every(is_scalar);
-        if (scalar_case && is_scalar(what)) {
+        if (scalar_case && what.is_scalar) {
             const ndx = compute_ndx(this.dims,where);
             this.real[ndx] = real_part(what);
             return;
         }
-        if (is_complex(what) && !this.complex_flag) {
+        if (is_complex(what) && !this.is_complex) {
             this.complexify();
         }
         if (scalar_case && (what instanceof ComplexScalar)) {
@@ -152,33 +158,50 @@ class ComplexScalar {
     }
     equals(other) {
         if (other instanceof ComplexScalar) {
-            return ((this.real === other.real) &&
-                    (this.imag === other.imag));
+            return new LogicalScalar((this.real === other.real) && (this.imag === other.imag));
         }
         if (other instanceof DoubleScalar) {
-            return ((this.real === other.real) && (this.imag === 0));
+            return new LogicalScalar((this.real === other.real) && (this.imag === 0));
         }
         return false;
     }
     plus(other) {
-        if (other instanceof ComplexScalar) {
+        if (other.is_scalar && other.is_complex) {
             return new ComplexScalar(this.real + other.real,
                                      this.imag + other.imag);
         }
-        if (other instanceof DoubleScalar) {
+        if (other.is_scalar && !other.is_complex) {
             return new ComplexScalar(this.real + other.real,
                                      this.imag);
         }
-        throw "Unhandled case of ComplexScalar plus";
-        if (is_complex(other)) {
-        } 
-        other.complexify();
-	let ret = make_array(other.dims);
+        let ret = make_array(other.dims).complexify();
         let cnt = count(ret.dims);
         for (let ndx=0;ndx<cnt;ndx++) {
             ret.real[ndx] = this.real + other.real[ndx];
         }
+        if (other.is_complex) {
+            for (let ndx=0;ndx<cnt;ndx++) {
+                ret.imag[ndx] = this.imag + other.imag[ndx];
+            }
+        } else {
+            for (let ndx=0;ndx<cnt;ndx++) {
+                ret.imag[ndx] = this.imag;
+            }
+        }
         return ret;        
+    }
+};
+
+class LogicalScalar {
+    constructor(real) {
+        this.real = real;
+    };
+    bool() {
+        return (this.real != 0);
+    }
+    plus(other) {
+        if (other.is_scalar && !other.is_complex)
+            return new DoubleScalar(this.real+other.real);
     }
 };
 
@@ -187,27 +210,33 @@ class DoubleScalar {
         this.real = real;
     };
     plus(other) {
-        if (other instanceof DoubleScalar) {
-            return new DoubleScalar(this.real + other.real);
-        } 
+        if (other.is_scalar && !other.is_complex) 
+            return new DoubleScalar(this.real+other.real);
+        if (other.is_scalar && other.is_complex)
+            return new ComplexScalar(this.real+other.real,other.imag);
 	let ret = make_array(other.dims);
         let cnt = count(ret.dims);
         for (let ndx=0;ndx<cnt;ndx++) {
             ret.real[ndx] = this.real + other.real[ndx];
         }
+        if (other.is_complex) {
+            for (let ndx=0;ndx<cnt;ndx++) {
+                ret.imag[ndx] = other.imag[ndx];
+            }
+        }
         return ret;
     };
     equals(other) {
-        if (other instanceof DoubleScalar)
-            return (this.real === other.real);
-        if (other instanceof ComplexScalar)
-            return ((this.real === other.real) && (other.imag === 0));
-        return false;
+        if (other.is_scalar && !other.is_complex)
+            return new LogicalScalar(this.real === other.real);
+        if (other.is_scalar && other.is_complex)
+            return new LogicalScalar((this.real === other.real) && (other.imag === 0));
+        return new LogicalScalar(false);
     }
     times(other) {
-        if (other instanceof DoubleScalar)
+        if (other.is_scalar && !other.is_complex) 
             return new DoubleScalar(this.real*other.real);
-        if (other instanceof ComplexScalar) 
+        if (other.is_scalar && other.is_complex) 
             return new ComplexScalar(this.real*other.real,
                                      this.real*other.imag);
     };
@@ -238,14 +267,19 @@ function print(A) {
     }
     return line;
 }
+ComplexScalar.prototype.is_scalar = true;
+ComplexScalar.prototype.is_complex = true;
+DoubleScalar.prototype.is_scalar = true;
+DoubleScalar.prototype.is_complex = false;
+DoubleArray.prototype.is_scalar = false;
+Number.prototype.is_scalar = true;
+Number.prototype.is_complex = false;
 
-
-function initialize_module() {
-    Number.prototype.is_scalar = true;
-    Number.prototype.is_complex = false;
+function initialize() {
+    return this;
 }
 
-module.exports.init = initialize_module;
+module.exports.init = initialize;
 module.exports.make_scalar = make_scalar;
 module.exports.make_array = make_array;
 module.exports.matmul = matmul_GEMM;

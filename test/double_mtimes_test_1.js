@@ -1,7 +1,7 @@
 'use strict';
 const chai = require('chai');
 const assert = chai.assert;
-const dbl = require('../double.js');
+const dbl = require('../double.js').init();
 const tst = require('../test_help.js');
 
 function matmul(A,B) {

@@ -39,8 +39,8 @@ let C = a.make_array([N,N]);
 let D = a.make_array([N,N]);
 for (let i=1;i<N;i++) {
     for (let j=1;j<N;j++) {
-        C.set([i,j]) = a.make_scalar(i,1);
-        D.set([i,j]) = a.make_scalar(N*N-1-i,3);
+        C.set([i,j],a.make_scalar(i,1));
+        D.set([i,j],a.make_scalar(N*N-1-i,3));
     }
 }
 console.timeEnd('fill');
