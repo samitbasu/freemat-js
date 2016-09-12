@@ -143,6 +143,46 @@ class DoubleArray {
         }
         throw `unhandled case for set in DoubleArray ${where} and ${JSON.stringify(what)}`;
     }
+    broadcast(other,op_real,op_complex) {
+        if (other.is_scalar) {
+            if (other.is_complex && !this.is_complex) {
+                // Case real_vec + complex_scalar
+                let ret = make_array(this.dims).complexify();
+                const cnt = count(ret.dims);
+                for (let ndx=0;ndx < cnt;ndx++) {
+                    const tmp = op_complex(this.real[ndx],0,other.real,other.imag);
+                    ret.real[ndx] = tmp[0];
+                    ret.imag[ndx] = tmp[1];
+                }
+                return ret;
+            }
+            if (!other.is_complex && !this.is_complex) {
+                // Case real_vec + real_scalar
+                let ret = make_array(this.dims);
+                const cnt = count(ret.dims);
+                for (let ndx=0;ndx < cnt;ndx++)
+                    ret.real[ndx] = op_real(this.real[ndx],other.real);
+                return ret;
+            }
+            if (this.is_complex) {
+                // Case complex_vec + anything
+                let ret = make_array(this.dims).complexify();
+                const cnt = count(ret.dims);
+                for (let ndx=0;ndx < cnt;ndx++) {
+                    const tmp = op_complex(this.real[ndx],this.imag[ndx],other.real,other.imag);
+                    ret.real[ndx] = tmp[0];
+                    ret.imag[ndx] = tmp[1];
+                }
+                return ret;
+            }
+        }
+        throw `unhandled case for broadcast operation`;
+    }
+    plus(other) {
+        return this.broadcast(other,
+                              (y,z) => y+z,
+                              (yr,yi,zr,zi) => [yr + zr, yi + zi]);
+    }
     mtimes(other) {
         if (other instanceof DoubleArray) {
             return new DoubleArray([this.dims[0],other.dims[1]], new Float64Array(mat.DGEMM(this,other)));
@@ -271,6 +311,7 @@ ComplexScalar.prototype.is_scalar = true;
 ComplexScalar.prototype.is_complex = true;
 DoubleScalar.prototype.is_scalar = true;
 DoubleScalar.prototype.is_complex = false;
+DoubleScalar.prototype.imag = 0;
 DoubleArray.prototype.is_scalar = false;
 Number.prototype.is_scalar = true;
 Number.prototype.is_complex = false;

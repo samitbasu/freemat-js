@@ -13,16 +13,13 @@ function dmsr(x) {
 }
 
 
+
 const cases = [{name: 'addition',
                 func: (x,y) => x.plus(y),
                 op_real: (a,b) => dmsr(a.real+b.real),
-                op_complex: (a,b) => {
-                    if (!a.is_complex)
-                        a = dmsc(a.real,0);
-                    if (!b.is_complex)
-                        b = dmsc(b.real,b.imag);
-                    return dmsc(a.real+b.real,a.imag+b.imag);
-                }]
+                op_complex: (c,d) => {
+                    return dmsc(c.real+d.real,c.imag+d.imag);
+                }}];
 
 describe('scalar double tests', function() {
     it('should have is_complex false for real values', () => {
@@ -112,6 +109,46 @@ describe('scalar double tests', function() {
             let g = c.plus(d);
             for (let p=1;p<=g.length;p++) {
                 assert.isTrue(g.get(p).equals(c.plus(d.get(p))).bool());
+            }
+        });
+        it(`should broadcast ${op.name} over an array with real values`, () => {
+            let c = tst.testMat(3,5);
+            let d = dmsr(5);
+            let g = op.func(c,d);
+            for (let p=1;p<=g.length;p++) {
+                let a = g.get(p);
+                let b = op.op_real(c.get(p),d);
+                assert.isTrue(a.equals(b).bool());
+            }
+        });
+        it(`should broadcast ${op.name} over an array with complex values`, () => {
+            let c = tst.testMat(3,5,1);
+            let d = dmsr(5);
+            let g = op.func(c,d);
+            for (let p=1;p<=g.length;p++) {
+                let a = g.get(p);
+                let b = op.op_complex(c.get(p),d);
+                assert.isTrue(a.equals(b).bool());
+            }
+        });
+        it('should support broadcast ${op.name} over an array with real values and a complex scalar', () => {
+            let c = tst.testMat(3,4);
+            let d = dmsc(5,3);
+            let g = op.func(c,d);
+            for (let p=1;p<=g.length;p++) {
+                let a = g.get(p);
+                let b = op.op_complex(c.get(p),d);
+                assert.isTrue(a.equals(b).bool());
+            }
+        });
+        it('should support addition over an array with complex values and a complex scalar', () => {
+            let c = tst.testMat(3,4,1);
+            let d = dmsc(5,3);
+            let g = c.plus(d);
+            for (let p=1;p<=g.length;p++) {
+                let a = g.get(p);
+                let b = op.op_complex(c.get(p),d);
+                assert.isTrue(a.equals(b).bool());
             }
         });
         it('should support addition of arrays of real values', () => {
