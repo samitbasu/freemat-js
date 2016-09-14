@@ -15,6 +15,9 @@ for (let p=0;p<5;p++) {
     console.time('adder');
     A = a.make_scalar(1,0).plus(A);
     console.timeEnd('adder');
+    console.time('adder2');
+    A = A.plus(a.make_scalar(1,0));
+    console.timeEnd('adder2');
     for (let i=0;i<5;i++) {
         let line = '';
         for (let j=0;j<5;j++) {

@@ -2,8 +2,7 @@
   "targets": [
     {
       "target_name": "mat",
-      "include_dirs" : [ "/System/Library/Frameworks/Accelerate.framework/Versions/A/Headers/" ],
-      "libraries" : [ "-framework /System/Library/Frameworks/Accelerate.framework"],
+      "libraries" : [ "-lopenblas" ],
       "sources": [ "mat.cpp" ]
     }
   ]

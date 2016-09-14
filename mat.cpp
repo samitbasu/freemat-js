@@ -2,7 +2,14 @@
 #include <node_buffer.h>
 #include <vector>
 #include <uv.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef __APPLE__
 #include <Accelerate.h>
+#else
+#include <cblas.h>
+#endif
 
 using namespace v8;
 

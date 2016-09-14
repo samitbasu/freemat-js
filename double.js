@@ -1,5 +1,57 @@
 const mat = require('./build/Release/mat');
 
+// For speed purposes (and yes, I benchmarked first)
+// it makes sense to have 6 permutations of each operator.
+//   scalar real
+//   scalar complex
+//   vec + scalar real
+//   vec + scalar complex
+//   scalar + vec real
+//   scalar + vec complex
+//  Some of the combinations are left out in this process,
+//  but these are the most important ones.  While this is not
+//  super_DRY, consider the output of bench4 on my chromebook:
+// func per point
+//    elapsed time: 242.8813049979508
+//    elapsed time: 220.03684999793768
+//     ... snip ...
+//    elapsed time: 201.5645989999175
+//    elapsed time: 205.98275800049305
+// average: 221.89251170009373
+// loop custom
+//    elapsed time: 39.733474001288414
+//    elapsed time: 52.88780099526048
+//     ... snip ...
+//    elapsed time: 43.13788800314069
+//    elapsed time: 48.27436499670148
+// average: 46.927580600231884
+// This represents a 5x penalty for putting a function around each
+// point. You can get it down to a 3x penalty with some
+// optimizations.  But it already represents a 2x penalty over the c++
+// version (FreeMat).  
+
+const op_add = require('./add.js');
+const op_subtract = require('./subtract.js');
+const op_times = require('./multiply.js');
+const op_rdivide = require('./rdivide.js');
+const op_ldivide = {
+    scalar_real : (a,b) => op_rdivide.scalar_real(b,a),
+    scalar_complex: (ar,ai,br,bi) =>
+	op_rdivide.scalar_complex(br,bi,ar,ai), 
+    vector_scalar_real: (c,a,b) =>
+	op_rdivide.scalar_vector_real(c,b,a),
+    vector_scalar_complex: (c,a,b) =>
+	op_rdivide.scalar_vector_complex(c,b,a),
+    scalar_vector_real: (c,a,b) =>
+	op_rdivide.vector_scalar_real(c,b,a),
+    scalar_vector_complex: (c,a,b) =>
+	op_rdivide.vector_scalar_complex(c,b,a),
+    vector_vector_real: (c,a,b) =>
+	op_rdivide.vector_vector_real(c,b,a),
+    vector_vector_complex: (c,a,b) =>
+	op_rdivide.vector_vector_complex(c,b,a)
+}
+
 class FMArray {
     constructor(x) {
         if (x instanceof Float64Array) {
@@ -143,45 +195,43 @@ class DoubleArray {
         }
         throw `unhandled case for set in DoubleArray ${where} and ${JSON.stringify(what)}`;
     }
-    broadcast(other,op_real,op_complex) {
+    binop(other,op) {
         if (other.is_scalar) {
-            if (other.is_complex && !this.is_complex) {
+            if (other.is_complex || this.is_complex) {
                 // Case real_vec + complex_scalar
                 let ret = make_array(this.dims).complexify();
-                const cnt = count(ret.dims);
-                for (let ndx=0;ndx < cnt;ndx++) {
-                    const tmp = op_complex(this.real[ndx],0,other.real,other.imag);
-                    ret.real[ndx] = tmp[0];
-                    ret.imag[ndx] = tmp[1];
-                }
+		op.vector_scalar_complex(ret,this,other);
                 return ret;
             }
-            if (!other.is_complex && !this.is_complex) {
-                // Case real_vec + real_scalar
-                let ret = make_array(this.dims);
-                const cnt = count(ret.dims);
-                for (let ndx=0;ndx < cnt;ndx++)
-                    ret.real[ndx] = op_real(this.real[ndx],other.real);
-                return ret;
-            }
-            if (this.is_complex) {
-                // Case complex_vec + anything
-                let ret = make_array(this.dims).complexify();
-                const cnt = count(ret.dims);
-                for (let ndx=0;ndx < cnt;ndx++) {
-                    const tmp = op_complex(this.real[ndx],this.imag[ndx],other.real,other.imag);
-                    ret.real[ndx] = tmp[0];
-                    ret.imag[ndx] = tmp[1];
-                }
-                return ret;
-            }
-        }
-        throw `unhandled case for broadcast operation`;
+	    // Case real_vec + real_scalar
+	    let ret = make_array(this.dims);
+	    op.vector_scalar_real(ret,this,other);
+	    return ret;
+	}
+	// real, real
+	if (!this.is_complex && !other.is_complex) {
+	    let ret = make_array(this.dims);
+	    op.vector_vector_real(ret,this,other);
+	    return ret;
+	}
+	let ret = make_array(this.dims).complexify();
+	op.vector_vector_complex(ret,this,other);
+	return ret;
     }
     plus(other) {
-        return this.broadcast(other,
-                              (y,z) => y+z,
-                              (yr,yi,zr,zi) => [yr + zr, yi + zi]);
+        return this.binop(other,op_add);
+    }
+    minus(other) {
+	return this.binop(other,op_subtract);
+    }
+    times(other) {
+	return this.binop(other,op_times);
+    }
+    rdivide(other) {
+	return this.binop(other,op_rdivide);
+    }
+    ldivide(other) {
+	return this.binop(other,op_ldivide);
     }
     mtimes(other) {
         if (other instanceof DoubleArray) {
@@ -205,30 +255,33 @@ class ComplexScalar {
         }
         return false;
     }
-    plus(other) {
+    binop(other,op) {
         if (other.is_scalar && other.is_complex) {
-            return new ComplexScalar(this.real + other.real,
-                                     this.imag + other.imag);
+	    const tmp = op.scalar_complex(this.real,this.imag,other.real,other.imag);
+	    return new ComplexScalar(tmp[0],tmp[1]);
         }
         if (other.is_scalar && !other.is_complex) {
-            return new ComplexScalar(this.real + other.real,
-                                     this.imag);
+	    const tmp = op.scalar_complex(this.real,this.imag,other.real,0);
+	    return new ComplexScalar(tmp[0],tmp[1]);
         }
         let ret = make_array(other.dims).complexify();
-        let cnt = count(ret.dims);
-        for (let ndx=0;ndx<cnt;ndx++) {
-            ret.real[ndx] = this.real + other.real[ndx];
-        }
-        if (other.is_complex) {
-            for (let ndx=0;ndx<cnt;ndx++) {
-                ret.imag[ndx] = this.imag + other.imag[ndx];
-            }
-        } else {
-            for (let ndx=0;ndx<cnt;ndx++) {
-                ret.imag[ndx] = this.imag;
-            }
-        }
-        return ret;        
+	op.scalar_vector_complex(ret,this,other);
+	return ret;
+    }
+    plus(other) {
+	return this.binop(other,op_add);
+    }
+    minus(other) {
+	return this.binop(other,op_subtract);
+    }
+    times(other) {
+	return this.binop(other,op_times);
+    }
+    rdivide(other) {
+	return this.binop(other,op_rdivide);
+    }
+    ldivide(other) {
+	return this.binop(other,op_ldivide);
     }
 };
 
@@ -237,7 +290,7 @@ class LogicalScalar {
         this.real = real;
     };
     bool() {
-        return (this.real != 0);
+        return (this.real);
     }
     plus(other) {
         if (other.is_scalar && !other.is_complex)
@@ -249,22 +302,21 @@ class DoubleScalar {
     constructor(real) {
         this.real = real;
     };
-    plus(other) {
+    binop(other,op) {
         if (other.is_scalar && !other.is_complex) 
-            return new DoubleScalar(this.real+other.real);
-        if (other.is_scalar && other.is_complex)
-            return new ComplexScalar(this.real+other.real,other.imag);
+            return new DoubleScalar(op.scalar_real(this.real,other.real));
+        if (other.is_scalar && other.is_complex) {
+	    const tmp = op.scalar_complex(this.real,0,other.real,other.imag);
+	    return new ComplexScalar(tmp[0],tmp[1]);
+	}
+	if (other.is_complex) {
+	    let ret = make_array(other.dims).complexify();
+	    op.scalar_vector_complex(ret,this,other);
+	    return ret;
+	}
 	let ret = make_array(other.dims);
-        let cnt = count(ret.dims);
-        for (let ndx=0;ndx<cnt;ndx++) {
-            ret.real[ndx] = this.real + other.real[ndx];
-        }
-        if (other.is_complex) {
-            for (let ndx=0;ndx<cnt;ndx++) {
-                ret.imag[ndx] = other.imag[ndx];
-            }
-        }
-        return ret;
+	op.scalar_vector_real(ret,this,other);
+	return ret;
     };
     equals(other) {
         if (other.is_scalar && !other.is_complex)
@@ -273,13 +325,21 @@ class DoubleScalar {
             return new LogicalScalar((this.real === other.real) && (other.imag === 0));
         return new LogicalScalar(false);
     }
+    plus(other) {
+	return this.binop(other,op_add);
+    }
+    minus(other) {
+	return this.binop(other,op_subtract);
+    }
     times(other) {
-        if (other.is_scalar && !other.is_complex) 
-            return new DoubleScalar(this.real*other.real);
-        if (other.is_scalar && other.is_complex) 
-            return new ComplexScalar(this.real*other.real,
-                                     this.real*other.imag);
-    };
+	return this.binop(other,op_times);
+    }
+    rdivide(other) {
+	return this.binop(other,op_rdivide);
+    }
+    ldivide(other) {
+	return this.binop(other,op_ldivide);
+    }
 }
 
 const make_scalar = function(real,imag = 0) {
