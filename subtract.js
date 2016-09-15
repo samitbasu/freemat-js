@@ -1,4 +1,5 @@
 // This module is for the subtraction operator
+'use strict';
 
 module.exports.scalar_real = (a,b) => a-b;
 

@@ -1,6 +1,12 @@
 'use strict';
 const dbl = require('./double.js');
 
+function randMat(dims) {
+    let C = dbl.make_array(dims);
+    for (let ndx=0;ndx<C.length;ndx++)
+	C.real[ndx] = Math.floor(Math.random()*10);
+    return C;
+}
 
 function testMat(N,M,imag_scale = 0) {
     let C = dbl.make_array([N,M]);
@@ -22,12 +28,27 @@ function time_it(func,limits) {
 }
 
 function mat_print(A) {
-    for (let row=1;row<=A.dims[0];row++) {
-        let row = '';
-        for (let col=1;col<=A.dims[1];col++) {
-            row += A.get([row,col]).real + ' ';
+    for (let row=1;row<=(A.dims[0] | 0);row++) {
+        let line = '';
+        for (let col=1;col<=(A.dims[1] | 0);col++) {
+            line += A.get([row,col]).real + ' ';
         }
-        console.log(row);
+        console.log(line);
+    }
+}
+
+function array_print(A) {
+    if (A.dims.length == 2)
+	return mat_print(A);
+    for (let page=1;page<=(A.dims[2] | 0);page++) {
+	console.log("page = (:,:," + page + ")");
+	for (let row=1;row<=(A.dims[0] | 0);row++) {
+            let line = '';
+            for (let col=1;col<=(A.dims[1] | 0);col++) {
+		line += A.get([row,col,page]).real + ' ';
+            }
+            console.log(line);
+	}
     }
 }
 
@@ -52,7 +73,8 @@ function mat_equal(A,B) {
 
 module.exports.tic = tic;
 module.exports.time_it = time_it;
+module.exports.randMat = (dims) => randMat(dims);
 module.exports.testMat = (N,M) => testMat(N,M);
 module.exports.testMatComplex = (N,M,iscale) => testMat(N,M,1);
-module.exports.mat_print = mat_print;
+module.exports.mat_print = array_print;
 module.exports.mat_equal = mat_equal;

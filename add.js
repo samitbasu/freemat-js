@@ -1,5 +1,7 @@
 // This module is for the addition operator
 
+'use strict';
+
 module.exports.scalar_real = (a,b) => a+b;
 
 module.exports.scalar_complex = (ar,ai,br,bi) => [ar+br,ai+bi];

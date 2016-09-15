@@ -1,10 +1,15 @@
 // This module is for the division operator
 
+'use strict';
+
+const op_utils = require('./op_utils');
+
 module.exports.scalar_real = (a,b) => a/b;
 
 function cdiv(ar,ai,br,bi) {
     let ratio, den;
     let abr, abi, cr;
+    let c1, c0;
 
     if ((ai == 0) && (bi == 0)) {
       c1 = 0;
@@ -66,17 +71,8 @@ module.exports.vector_scalar_real = (c,a,b) => {
     }
 }
 
-module.exports.vector_scalar_complex = (c,a,b) => {
-    for (let ndx = 0;ndx < a.length;ndx++) {
-	const ar = a.real[ndx];
-	const ai = (a.imag[ndx]|0);
-	const br = b.real;
-	const bi = b.imag;
-	const r = cdiv(ar,ai,br,bi);
-	c.real[ndx] = r[0];
-	c.imag[ndx] = r[1];
-    }
-}
+module.exports.vector_scalar_complex = (c,a,b) => 
+    op_utils.vector_scalar_complex_func(c,a,b,cdiv);
 
 module.exports.scalar_vector_real = (c,a,b) => {
     for (let ndx = 0; ndx < b.length;ndx++) {
@@ -84,17 +80,8 @@ module.exports.scalar_vector_real = (c,a,b) => {
     }
 }
 
-module.exports.scalar_vector_complex = (c,a,b) => {
-    for (let ndx = 0; ndx < b.length;ndx++) {
-	const ar = a.real;
-	const ai = a.imag;
-	const br = b.real[ndx];
-	const bi = (b.imag[ndx]|0);
-	const r = cdiv(ar,ai,br,bi);
-	c.real[ndx] = r[0];
-	c.imag[ndx] = r[1];
-    }
-}
+module.exports.scalar_vector_complex = (c,a,b) => 
+    op_utils.scalar_vector_complex_func(c,a,b,cdiv);
 
 module.exports.vector_vector_real = (c,a,b) => {
     for (let ndx = 0; ndx < a.length; ndx++) {
@@ -102,14 +89,5 @@ module.exports.vector_vector_real = (c,a,b) => {
     }
 }
 
-module.exports.vector_vector_complex = (c,a,b) => {
-    for (let ndx = 0; ndx < a.lengthe; ndx++) {
-	const ar = a.real[ndx];
-	const ai = a.imag[ndx]|0;
-	const br = b.real[ndx];
-	const bi = (b.imag[ndx]|0);
-	const r = cdiv(ar,ai,br,bi);
-	c.real[ndx] = r[0];
-	c.imag[ndx] = r[1];
-    }
-}
+module.exports.vector_vector_complex = (c,a,b) => 
+    op_utils.vector_vector_complex_func(c,a,b,cdiv);

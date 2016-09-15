@@ -170,7 +170,7 @@ class DoubleArray {
         } else if (where.every(is_scalar)) {
             ndx = compute_ndx(this.dims,where);
         } else {
-            throw "unhandled case for get in DoubleArray";
+            throw "unhandled case for get in DoubleArray " + where;
         }
         if (!this.is_complex)
             return make_scalar(this.real[ndx]);
