@@ -157,11 +157,21 @@ class DoubleArray {
         this.is_complex = false;
         this.is_scalar = false;
     }
+    slice(offset,dims) {
+	let slice_len = count(dims);
+	if (this.real instanceof Float64Array) 
+	    return new DoubleArray(dims, new Float64Array(this.real.buffer,
+							  offset*8,slice_len));
+	throw "What?";
+    }
     complexify() {
         if (this.is_complex) return this;
         this.imag = allocate(this.length);
         this.is_complex = true;
         return this;
+    }
+    fast_get(where) {
+	return this.real[where|0];
     }
     get(where) {
         let ndx = 0;
@@ -177,7 +187,14 @@ class DoubleArray {
         else
             return make_scalar(this.real[ndx],this.imag[ndx]);
     }
+    fast_set(a,b) {
+	this.real[a] = b;
+    }
     set(where,what) {
+	if (where.is_scalar && what.is_scalar) {
+	    this.real[where-1] = real_part(what);
+	    return;
+	}
         const scalar_case = where.every(is_scalar);
         if (scalar_case && what.is_scalar) {
             const ndx = compute_ndx(this.dims,where);

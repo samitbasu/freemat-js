@@ -7,8 +7,11 @@ module.exports.scalar_real = (a,b) => a+b;
 module.exports.scalar_complex = (ar,ai,br,bi) => [ar+br,ai+bi];
 
 module.exports.vector_scalar_real = (c,a,b) => {
+    //    for (let ndx = 0;ndx < a.length;ndx++) {
+    //	    c.real[ndx] = a.real[ndx] + b.real;
+    //    }
     for (let ndx = 0;ndx < a.length;ndx++) {
-	c.real[ndx] = a.real[ndx] + b.real;
+	c.real[ndx] = a.fast_get(ndx) + b.real;
     }
 }
 

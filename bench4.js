@@ -1,17 +1,7 @@
 a = require('./double');
 tst = require('./test_help');
 
-const rep_time = (func,reps) => {
-    let sum = 0;
-    for (let ndx = 0;ndx < reps;ndx++) {
-	let t1 = tst.tic()*1000;
-	func();
-	let t2 = tst.tic()*1000;
-	console.log("   elapsed time: " + (t2-t1));
-	sum = sum + (t2-t1);
-    }
-    console.log("average: " + sum/reps);
-}
+const rep_time = tst.rep_time;
 
 const reps = 10;
 

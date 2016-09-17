@@ -27,6 +27,18 @@ function time_it(func,limits) {
     return (module.exports.tic() - t1);    
 }
 
+function rep_time(func,reps) {
+    let sum = 0;
+    for (let ndx = 0;ndx < reps;ndx++) {
+	let t1 = tst.tic()*1000;
+	func();
+	let t2 = tst.tic()*1000;
+	console.log("   elapsed time: " + (t2-t1));
+	sum = sum + (t2-t1);
+    }
+    console.log("average: " + sum/reps);
+}
+
 function mat_print(A) {
     for (let row=1;row<=(A.dims[0] | 0);row++) {
         let line = '';
@@ -73,6 +85,7 @@ function mat_equal(A,B) {
 
 module.exports.tic = tic;
 module.exports.time_it = time_it;
+module.exports.rep_time = rep_time;
 module.exports.randMat = (dims) => randMat(dims);
 module.exports.testMat = (N,M) => testMat(N,M);
 module.exports.testMatComplex = (N,M,iscale) => testMat(N,M,1);

@@ -1,1 +1,3 @@
 For power, need to refine operation
+
+Consider slicing as an operation
