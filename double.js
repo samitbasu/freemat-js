@@ -1,4 +1,4 @@
-const mat = require('./build/Release/mat');
+const mat = require('./build/Debug/mat');
 
 // For speed purposes (and yes, I benchmarked first)
 // it makes sense to have 6 permutations of each operator.
@@ -374,6 +374,13 @@ function matmul_GEMM(a,b) {
     return new DoubleArray([a.dims[0],b.dims[1]],new Float64Array(mat.DGEMM(a,b)));
 }
 
+function matsolve_GEMM(a,b) {
+    return new DoubleArray([a.dims[1],b.dims[1]],
+                           new Float64Array(mat.DSOLVE(a,b,(x) => {
+                               console.log(x);
+                           })));
+}
+
 function print(A) {
     let line = '';
     for (let i=0;i<A.dims[0];i++) {
@@ -401,5 +408,6 @@ module.exports.init = initialize;
 module.exports.make_scalar = make_scalar;
 module.exports.make_array = make_array;
 module.exports.matmul = matmul_GEMM;
+module.exports.matsolve = matsolve_GEMM;
 module.exports.print = print;
 module.exports.is_scalar = is_scalar;

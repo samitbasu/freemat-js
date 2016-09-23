@@ -56,6 +56,19 @@ console.timeEnd('fill');
 console.time('gemm');
 let G = a.matmul(C,D);
 console.timeEnd('gemm');
+
+let C1 = a.make_array([5,5]);
+let D1 = a.make_array([5,1]);
+for (let i=1;i<=5;i++) {
+    C1.set([i,i],a.make_scalar(1,0));
+    D1.set([i,1],a.make_scalar(i,0));
+}
+for (let i=1;i<=4;i++) {
+    C1.set([i,i+1],a.make_scalar(1,0));
+}
+let E1 = a.matsolve(C1,D1);
+console.log(a.print(E1));
+
 // Compare with a manual matrix multiply
 /*
 let F = a.make_array([N,N]);
