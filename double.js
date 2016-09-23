@@ -1,4 +1,4 @@
-const mat = require('./build/Debug/mat');
+const mat = require('./build/Release/mat');
 
 // For speed purposes (and yes, I benchmarked first)
 // it makes sense to have 6 permutations of each operator.
