@@ -57,6 +57,8 @@ namespace FM {
     int rows;
     int cols;
     std::vector<T> data;
+    BLASMatrix() : rows(0), cols(0), data() {
+    }
     BLASMatrix(int r, int c) {
       rows = r;
       cols = c;
@@ -80,7 +82,7 @@ namespace FM {
   }
 
   template <class I, class O, class T = double> 
-  BLASMatrix<T> ObjectToBLASMatrix(I isolate, O arg, const char *name = "real") {
+  BLASMatrix<T> ObjectToBLASMatrixReal(I isolate, O arg, const char *name = "real") {
     auto context = isolate->GetCurrentContext();
     auto obj = arg->ToObject(context).ToLocalChecked();
     auto dims = GetDoubleArray(isolate,obj,"dims");
@@ -102,11 +104,24 @@ namespace FM {
   BLASMatrix<Complex<T> > ObjectToBLASMatrixComplex(I isolate, O arg) {
     auto context = isolate->GetCurrentContext();
     auto obj = arg->ToObject(context).ToLocalChecked();
-    BLASMatrix<T> real_part(ObjectToBLASMatrix(isolate,obj,"real"));
-    BLASMatrix<T> imag_part(ObjectToBLASMatrix(isolate,obj,"imag"));
+    BLASMatrix<T> real_part(ObjectToBLASMatrixReal(isolate,obj,"real"));
+    BLASMatrix<T> imag_part(ObjectToBLASMatrixReal(isolate,obj,"imag"));
     return BLASMatrixInterleave<T>(real_part,imag_part);
   }
 
+  template <class T>
+  void ObjectToBLASMatrix(Isolate *isolate, Value* obj, BLASMatrix<T> &o);
+
+  template <>
+  void ObjectToBLASMatrix(Isolate *isolate, Value* obj, BLASMatrix<double> &o) {
+    o = ObjectToBLASMatrixReal(isolate,obj);
+  }
+
+  template <>
+  void ObjectToBLASMatrix(Isolate *isolate, Value* obj, BLASMatrix<Complex<double> >&o) {
+    o = ObjectToBLASMatrixComplex(isolate,obj);
+  }
+  
   template <class I, class T = double>
   Local<ArrayBuffer> BLASMatrixToBuffer(BLASMatrix<T> &mat, I isolate) {
     size_t len = mat.elements();

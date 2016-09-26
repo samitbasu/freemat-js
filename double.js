@@ -146,16 +146,19 @@ function allocate(len) {
 // Class that uses a typed array as backing for the data
 // Useful for medium to large arrays.
 class DoubleArray {
-    constructor(dims, real = null) {
+    constructor(dims, real = null, imag = []) {
         this.dims = dims;
         this.length = count(dims);
         if (real)
             this.real = real;
         else
             this.real = allocate(this.length);
-        this.imag = [];
-        this.is_complex = false;
+        this.imag = imag;
+        this.is_complex = (imag.length !== 0);
         this.is_scalar = false;
+    }
+    as_array() {
+        return this;
     }
     slice(offset,dims) {
 	let slice_len = count(dims);
@@ -191,20 +194,25 @@ class DoubleArray {
 	this.real[a] = b;
     }
     set(where,what) {
-	if (where.is_scalar && what.is_scalar) {
+        if (!this.is_complex && what.is_complex) {
+            this.complexify();
+        }
+	if ((where.is_scalar||0) && (what.is_scalar||0) && !what.is_complex) {
 	    this.real[where-1] = real_part(what);
 	    return;
 	}
+        if ((where.is_scalar||0) && (what.is_scalar||0) && (what.is_complex||0)) {
+            this.real[where-1] = what.real;
+            this.imag[where-1] = what.imag;
+            return;
+        }
         const scalar_case = where.every(is_scalar);
-        if (scalar_case && what.is_scalar) {
+        if (scalar_case && what.is_scalar && !what.is_complex) {
             const ndx = compute_ndx(this.dims,where);
             this.real[ndx] = real_part(what);
             return;
         }
-        if (is_complex(what) && !this.is_complex) {
-            this.complexify();
-        }
-        if (scalar_case && (what instanceof ComplexScalar)) {
+        if (scalar_case && what.is_scalar && what.is_complex) {
             const ndx = compute_ndx(this.dims,where);
             this.real[ndx] = what.real;
             this.imag[ndx] = what.imag;
@@ -213,6 +221,16 @@ class DoubleArray {
         throw `unhandled case for set in DoubleArray ${where} and ${JSON.stringify(what)}`;
     }
     binop(other,op) {
+        if (this.is_scalar && other.is_scalar) {
+            if (other.is_complex || this.is_complex) {
+                let ret = make_scalar(0,0);
+                op.scalar_scalar_complex(ret,this,other);
+                return ret;
+            }
+            let ret = make_scalar(0);
+            op.scalar_scalar_real(ret,this,other);
+            return ret;
+        }
         if (other.is_scalar) {
             if (other.is_complex || this.is_complex) {
                 // Case real_vec + complex_scalar
@@ -300,6 +318,11 @@ class ComplexScalar {
     ldivide(other) {
 	return this.binop(other,op_ldivide);
     }
+    as_array() {
+        let p = new DoubleArray([1,1],this.real,this.imag);
+        p.is_scalar = true;
+        return p;
+    }
 };
 
 class LogicalScalar {
@@ -357,6 +380,11 @@ class DoubleScalar {
     ldivide(other) {
 	return this.binop(other,op_ldivide);
     }
+    as_array() {
+        let p = new DoubleArray([1,1],this.real);
+        p.is_scalar = true;
+        return p;
+    }
 }
 
 const make_scalar = function(real,imag = 0) {
@@ -366,19 +394,22 @@ const make_scalar = function(real,imag = 0) {
         return new ComplexScalar(real,imag);
 }
 
+/*
+const make_scalar = function(real, imag = 0) {
+    if (imag === 0) {
+        let p = new DoubleArray([1,1],real);
+        p.is_scalar = true;
+        return p;
+    } else {
+        let p = new DoubleArray([1,1],real,imag);
+        p.is_scalar = true;
+        return p;
+    }
+}
+*/
+
 const make_array = function(dims) {
     return new DoubleArray(dims);
-}
-
-function matmul_GEMM(a,b) {
-    return new DoubleArray([a.dims[0],b.dims[1]],new Float64Array(mat.DGEMM(a,b)));
-}
-
-function matsolve_GEMM(a,b) {
-    return new DoubleArray([a.dims[1],b.dims[1]],
-                           new Float64Array(mat.DSOLVE(a,b,(x) => {
-                               console.log(x);
-                           })));
 }
 
 function print(A) {
@@ -407,7 +438,20 @@ function initialize() {
 module.exports.init = initialize;
 module.exports.make_scalar = make_scalar;
 module.exports.make_array = make_array;
-module.exports.matmul = matmul_GEMM;
-module.exports.matsolve = matsolve_GEMM;
+module.exports.matmul = (a,b) => {
+    return new DoubleArray([a.dims[0],b.dims[1]],
+                           new Float64Array(mat.DGEMM(a,b)));
+}
+module.exports.matsolve = (a,b) => {
+    return new DoubleArray([a.dims[1],b.dims[1]],
+                           new Float64Array(mat.DSOLVE(a,b,(x) => {
+                               console.log(x);
+                           })));
+}
+module.exports.transpose = (a) => {
+    return new DoubleArray([a.dims[1],a.dims[0]],
+                           new Float64Array(mat.DTRANSPOSE(a)));
+}
 module.exports.print = print;
 module.exports.is_scalar = is_scalar;
+DoubleScalar.prototype.type = module.exports;

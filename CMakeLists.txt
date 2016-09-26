@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(mat)
 
-add_library(mat SHARED addon_source/mat.cpp addon_source/dense_solver.cpp addon_source/LAPACK.cpp)
+add_library(mat SHARED addon_source/mat.cpp addon_source/LAPACK.cpp)
 
 include_directories(addon_source)
 
