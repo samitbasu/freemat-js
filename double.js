@@ -52,63 +52,6 @@ const op_ldivide = {
 	op_rdivide.vector_vector_complex(c,b,a)
 }
 
-class FMArray {
-    constructor(x) {
-        if (x instanceof Float64Array) {
-            this.val = x.slice(0);
-        } else {
-            this.val = x;
-        }
-    }
-    count() {
-        if (this.x instanceof Float64Array) {
-            return this.x.length;
-        } else {
-            return 1;
-        }
-    }
-    isScalar() {
-        return !(this.x instanceof Float64Array);
-    }
-    scalarValue() {
-        if (this.x instanceof Float64Array) {
-            return this.x[0];
-        } else {
-            return this.x;
-        }
-    }
-}
-
-/*
-module.exports = class Double {
-    constructor(real, imag = 0) {
-        this.real = new FMArray(real);
-        this.imag = new FMArray(imag);
-    };
-    isScalar() {
-        return this.real.isScalar();
-    }
-    realScalar() {
-        return this.real.scalarValue();
-    }
-    imagScalar() {
-        return this.imag.scalarValue();
-    }
-    plus(other) {
-        if (this.isScalar() && other.isScalar()) {
-            return new Double(this.realScalar()+other.realScalar(),
-                              this.imagScalar()+other.imagScalar());
-        }
-        return new Double(0,0);
-    };
-}
-*/
-
-function is_complex(x) {
-    return ((typeof(x) === 'number') || x.complex_flag);
-            
-}
-
 function is_scalar(x) {
     return ((typeof(x) === 'number') || (x.is_scalar));
 }
@@ -132,8 +75,32 @@ function compute_ndx(dims,x) {
     throw "What?";
 }
 
+function is_vector(dims) {
+    const cdim = count(dims);
+    return ((cdim === dims[0]) || (cdim === dims[1]));
+}
+
+function is_row_vector(dims) {
+    return (is_vector(dims) && (dims[0] === 1));
+}
+
 function count(array) {
     return array.reduce((x,y) => x*y,1);
+}
+
+function exceeds_limits(x,lim) {
+    for (let i=0;i<x.length;i++) {
+        if (x[i] > (lim[i] || 1)) return true;
+    }
+    return false;
+}
+
+function new_size(x,lim) {
+    let ret = [];
+    for (let i=0;i<Math.max(x.length,lim.length);i++) {
+        ret[i] = Math.max((x[i] || 1),(lim[i] || 1));
+    }
+    return ret;
 }
 
 function allocate(len) {
@@ -143,21 +110,111 @@ function allocate(len) {
     return new Float64Array(len);
 }
 
+function extend_dims(dims, len) {
+    for (let i=dims.length;i<len;i++) dims[i] = 1;
+}
+
+function dot(x,y) {
+    let accum = 0;
+    for (let i=0;i<x.length;i++)
+        accum += (x[i]*y[i]);
+    return accum;
+}
+
+function stride(dims) {
+    let ret = [1];
+    for (let i=1;i<dims.length;i++)
+        ret[i] = ret[i-1]*dims[i-1];
+    return ret;
+}
+
+function increment_ripple(x,limits,dim) {
+    x[dim]++;
+    for (let i=dim;i<x.length;i++) {
+        if (x[i] >= limits[i]) {
+            x[i] = 0;
+            x[i+1]++;
+        }
+    }
+}
+
+function copyLoop(orig_dims, array, new_dims) {
+    const capacity = count(new_dims)*2;
+    let op = allocate(capacity);
+    // Normalize the dimensions so that they match
+    let dim_len = Math.max(new_dims.length,orig_dims.length);
+    extend_dims(orig_dims,dim_len);
+    extend_dims(new_dims,dim_len);
+    const a_rows = orig_dims[0];
+    // Calculate the number of iterations
+    const iterations = count(orig_dims)/a_rows;
+    // Calculate the stride vector
+    const stride_vec = stride(new_dims);
+    // Create an index vector
+    let ndx = Array(dim_len).fill(0);
+    let offset = 0;
+    for (let iter=0;iter < iterations;iter++) {
+        let start = dot(ndx,stride_vec);
+        for (let row=0;row<a_rows;row++) {
+            op[row+start] = array[offset+row];
+        }
+        offset = offset + a_rows;
+        increment_ripple(ndx,orig_dims,1);
+    }
+    return {dims: new_dims, capacity: capacity, array: op};
+}
+
 // Class that uses a typed array as backing for the data
 // Useful for medium to large arrays.
 class DoubleArray {
     constructor(dims, real = null, imag = []) {
         this.dims = dims;
         this.length = count(dims);
+        this.capacity = this.length;
         if (real)
             this.real = real;
         else
             this.real = allocate(this.length);
         this.imag = imag;
         this.is_complex = (imag.length !== 0);
-        this.is_scalar = false;
+        this.is_scalar = (this.length === 1);
     }
-    as_array() {
+    resize(new_dims) {
+        // Resize the array to the new dimensions.  There are several considerations:
+        //  1.  If the resize is a vector one and this is a vector and the capacity
+        //      is adequate, we can simply adjust the dimension
+        if (is_vector(this.dims) && is_vector(new_dims) &&
+            (this.capacity >= count(new_dims))) {
+            this.dims = new_dims;
+            return this;
+        }
+        //  2.  If the current array is empty, a resize is the same as an allocate
+        if (this.length === 0) {
+            return new DoubleArray(new_dims);
+        }
+        //  3.  If the capacity is large enough, we can move the data
+        /*
+        if (this.capacity >= count(new_dims)) {
+            return moveLoop(this,new_dims);
+        }*/
+        //  4.  Otherwise, we have to copy
+        if (!this.is_complex) {
+            const real_part = copyLoop(this.dims,this.real,new_dims);
+            this.dims = real_part.dims;
+            this.capacity = real_part.capacity;
+            this.real = real_part.array;
+            this.length = count(this.dims);
+            this.is_scalar = (this.length === 1);
+        } else {
+            const real_part = copyLoop(this.dims,this.real,new_dims);
+            const imag_part = copyLoop(this.dims,this.imag,new_dims);
+            this.dims = real_part.dims;
+            this.capacity = real_part.capacity;
+            this.real = real_part.array;
+            this.imag = imag_part.array;
+            this.length = count(this.dims);
+            this.is_scalar = (this.length === 1);
+        }
         return this;
     }
     slice(offset,dims) {
@@ -197,26 +254,40 @@ class DoubleArray {
         if (!this.is_complex && what.is_complex) {
             this.complexify();
         }
+        if ((where.is_scalar) && (where > this.length)) {
+            if (this.is_scalar || is_row_vector(this.dims)) {
+                let that = this.resize([1,where]);
+                return that.set(where,what);
+            } else {
+                this.dims = [this.length,1];
+                let that = this.resize([where,1]);
+                return that.set(where,what);
+            }
+        }
 	if ((where.is_scalar||0) && (what.is_scalar||0) && !what.is_complex) {
 	    this.real[where-1] = real_part(what);
-	    return;
+	    return this;
 	}
         if ((where.is_scalar||0) && (what.is_scalar||0) && (what.is_complex||0)) {
             this.real[where-1] = what.real;
             this.imag[where-1] = what.imag;
-            return;
+            return this;
         }
         const scalar_case = where.every(is_scalar);
+        if (scalar_case && exceeds_limits(where,this.dims)) {
+            let that = this.resize(new_size(where,this.dims));
+            return that.set(where,what);
+        }
         if (scalar_case && what.is_scalar && !what.is_complex) {
             const ndx = compute_ndx(this.dims,where);
             this.real[ndx] = real_part(what);
-            return;
+            return this;
         }
         if (scalar_case && what.is_scalar && what.is_complex) {
             const ndx = compute_ndx(this.dims,where);
             this.real[ndx] = what.real;
             this.imag[ndx] = what.imag;
-            return;
+            return this;
         }
         throw `unhandled case for set in DoubleArray ${where} and ${JSON.stringify(what)}`;
     }
@@ -318,10 +389,9 @@ class ComplexScalar {
     ldivide(other) {
 	return this.binop(other,op_ldivide);
     }
-    as_array() {
-        let p = new DoubleArray([1,1],this.real,this.imag);
-        p.is_scalar = true;
-        return p;
+    set(where,what) {
+        let that = make_array([1,1],[this.real],[this.imag]);
+        return that.set(where,what);
     }
 };
 
@@ -380,10 +450,9 @@ class DoubleScalar {
     ldivide(other) {
 	return this.binop(other,op_ldivide);
     }
-    as_array() {
-        let p = new DoubleArray([1,1],this.real);
-        p.is_scalar = true;
-        return p;
+    set(where,what) {
+        let that = make_array([1,1],[this.real]);
+        return that.set(where,what);
     }
 }
 

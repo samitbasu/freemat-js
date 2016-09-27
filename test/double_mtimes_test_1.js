@@ -17,7 +17,7 @@ function matmul(A,B) {
             for (let ndx=1;ndx<=Acols;ndx++) {
                 accum = accum.plus(A.get([row,ndx]).times(B.get([ndx,col])));
             }
-            C.set([row,col],accum);
+            C = C.set([row,col],accum);
         }
     }
     return C;

@@ -8,7 +8,7 @@ describe('double assignment tests', function() {
     it('should allow set/get row operations on an array with real values', () => {
         let a = dbl.make_array([10,1]);
         for (let i=1;i<=10;i++) {
-            a.set(i,dbl.make_scalar(i));
+            a = a.set(i,dbl.make_scalar(i));
         }
         for (let i=1;i<=10;i++) {
             assert.isTrue(a.get(i).equals(dbl.make_scalar(i)).bool());
@@ -17,7 +17,7 @@ describe('double assignment tests', function() {
     it('should allow set/get row operations on an array with complex values', () => {
         let a = dbl.make_array([10,1]);
         for (let i=1;i<=10;i++) {
-            a.set(i,dbl.make_scalar(i,i+1));
+            a = a.set(i,dbl.make_scalar(i,i+1));
         }
         for (let i=1;i<=10;i++) {
             assert.isTrue(a.get(i).equals(dbl.make_scalar(i,i+1)).bool());
@@ -26,7 +26,7 @@ describe('double assignment tests', function() {
     it('should have a valid imaginary part for real arrays', () => {
         let a = dbl.make_array([10,1]);
         for (let i=1;i<=10;i++) {
-            a.set(i,dbl.make_scalar(i));
+            a = a.set(i,dbl.make_scalar(i));
         }
         for (let i=1;i<=10;i++) {
             assert.isTrue(a.get(i).imag === 0);
@@ -36,9 +36,9 @@ describe('double assignment tests', function() {
     it('should automatically promote real arrays to complex ones', () => {
         let a = dbl.make_array([10,1]);
         for (let i=1;i<=10;i++) {
-            a.set(i,dbl.make_scalar(i));
+            a = a.set(i,dbl.make_scalar(i));
         }
-        a.set(1,dbl.make_scalar(1,1));
+        a = a.set(1,dbl.make_scalar(1,1));
         for (let i=2;i<=10;i++) {
             assert.isTrue(a.get(i).imag === 0);
         }
@@ -48,11 +48,11 @@ describe('double assignment tests', function() {
     it('should automatically demote complex arrays to real ones', () => {
         let a = dbl.make_array([10,1]);
         for (let i=1;i<=10;i++) {
-            a.set(i,dbl.make_scalar(i));
+            a = a.set(i,dbl.make_scalar(i));
         }
-        a.set(1,dbl.make_scalar(1,1));
+        a = a.set(1,dbl.make_scalar(1,1));
         assert.isTrue(a.is_complex);
-        a.set(1,dbl.make_scalar(1));
+        a = a.set(1,dbl.make_scalar(1));
         assert.isFalse(a.is_complex);
     });
     it('should allow for multidimensional gets/sets in a multidimensional array (real)', () => {
@@ -61,7 +61,7 @@ describe('double assignment tests', function() {
             for (let j=1;j<=4;j++) {
                 for (let k=1;k<=3;k++) {
                     let p = k + (j-1)*3 + (i-1)*4*3;
-                    a.set([k,j,i],dbl.make_scalar(p));
+                    a = a.set([k,j,i],dbl.make_scalar(p));
                 }
             }
         }
@@ -80,7 +80,7 @@ describe('double assignment tests', function() {
             for (let j=1;j<=4;j++) {
                 for (let k=1;k<=3;k++) {
                     let p = k + (j-1)*3 + (i-1)*4*3;
-                    a.set([k,j,i],dbl.make_scalar(p,p+1));
+                    a = a.set([k,j,i],dbl.make_scalar(p,p+1));
                 }
             }
         }
@@ -96,7 +96,7 @@ describe('double assignment tests', function() {
     it('should allow for column addressing for sets in a multidimensional array', () => {
         let a = dbl.make_array([3,4,5]);
         for (let i=1;i<=(3*4*5);i++) {
-            a.set(i,dbl.make_scalar(i));
+            a = a.set(i,dbl.make_scalar(i));
         }
         for (let i=1;i<=5;i++) {
             for (let j=1;j<=4;j++) {
@@ -113,18 +113,18 @@ describe('double assignment tests', function() {
             for (let j=1;j<=4;j++) {
                 for (let k=1;k<=3;k++) {
                     let p = k + (j-1)*3 + (i-1)*4*3;
-                    a.set([k,j,i],dbl.make_scalar(p));
+                    a = a.set([k,j,i],dbl.make_scalar(p));
                     assert.isTrue(a.get([k,j,i]).equals(dbl.make_scalar(p)).bool());
                 }
             }
         }        
         for (let i=1;i<=(3*4*5);i++) {
-            a.set(i,dbl.make_scalar(i));
+            a = a.set(i,dbl.make_scalar(i));
         }
     });
     it('should expand a scalar to a row-vector upon vector assignment', () => {
         let a = dbl.make_scalar(1);
-        a.as_array().set(3,dbl.make_scalar(3));
+        a = a.set(3,dbl.make_scalar(3));
         assert.isFalse(a.is_scalar);
         assert.isFalse(a.is_complex);
         assert.equal(a.length,3);
@@ -134,8 +134,7 @@ describe('double assignment tests', function() {
     });
     it('should expand a scalar to a column-vector upon row-explicit assignment', () => {
         let a = dbl.make_scalar(1);
-        a = a.as_array();
-        a.set([3,1],dbl.make_scalar(3));
+        a = a.set([3,1],dbl.make_scalar(3));
         assert.isFalse(a.is_scalar);
         assert.isFalse(a.is_complex);
         assert.equal(a.length,3);
@@ -145,7 +144,7 @@ describe('double assignment tests', function() {
     });
     it('should expand a scalar to a multi-dimensional array upon multi-dim assignment', () => {
         let a = dbl.make_scalar(1);
-        a.as_array().set([3,4,5],dbl.make_scalar(3));
+        a = a.set([3,4,5],dbl.make_scalar(3));
         assert.isFalse(a.is_scalar);
         assert.isFalse(a.is_complex);
         assert.equal(a.length,3*4*5);
