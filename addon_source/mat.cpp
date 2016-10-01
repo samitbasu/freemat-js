@@ -35,19 +35,21 @@ template <class T>
 void TGEMM(const FunctionCallbackInfo<Value> &args) {
   auto isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  if (args.Length() != 2) 
-    ThrowE(isolate,"Expected two arguments to GEMM function");
-  auto context = isolate->GetCurrentContext();
-  BLASMatrix<T> Amat;
-  BLASMatrix<T> Bmat;
-  ObjectToBLASMatrix<T>(isolate,*(args[0]),Amat);
-  ObjectToBLASMatrix<T>(isolate,*(args[1]),Bmat);
+  if (args.Length() != 3) {
+    ThrowE(isolate,"Expected three arguments to GEMM function");
+    return;
+  }
+  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
+  auto Bmat = ObjectToBLASMatrix<T>(isolate,*(args[1]));
+  auto cb = Local<Function>::Cast(args[2]);
   BLASMatrix<T> Cmat(Amat.rows,Bmat.cols);
-  if (Amat.cols != Bmat.rows)
+  if (Amat.cols != Bmat.rows) {
     ThrowE(isolate,"Columns and rows must match in matrix multiplication");
+    return;
+  }
   BLAS_gemm(Amat.rows, Amat.cols, Bmat.cols,
             Amat.base(), Bmat.base(), Cmat.base());
-  args.GetReturnValue().Set(BLASMatrixToBuffer(Cmat,isolate));
+  args.GetReturnValue().Set(ConstructArray(isolate,cb,Cmat));
 }
 
 
@@ -61,12 +63,12 @@ template <class T>
 void TSOLVE(const FunctionCallbackInfo<Value> &args) {
   auto isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  if (args.Length() != 3)
-    ThrowE(isolate,"Expected three arguments to DSOLVE function");
-  BLASMatrix<T> Amat;
-  BLASMatrix<T> Bmat;
-  ObjectToBLASMatrix<T>(isolate,*(args[0]),Amat);
-  ObjectToBLASMatrix<T>(isolate,*(args[1]),Bmat);
+  if (args.Length() != 4) {
+    ThrowE(isolate,"Expected four arguments to DSOLVE function");
+    return;
+  }
+  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
+  auto Bmat = ObjectToBLASMatrix<T>(isolate,*(args[1]));
   BLASMatrix<T> Cmat(Amat.cols, Bmat.cols);
   std::function<void(std::string) > cback = [=](std::string foo) {
     Local<Function> cb = Local<Function>::Cast(args[2]);
@@ -74,8 +76,9 @@ void TSOLVE(const FunctionCallbackInfo<Value> &args) {
     Local<Value> argv[argc] = {String::NewFromUtf8(isolate,foo.c_str())};
     cb->Call(Null(isolate), argc, argv);
   };
+  auto ma = Local<Function>::Cast(args[3]);
   DenseSolve(Amat.rows,Amat.cols,Bmat.cols,Cmat.base(),Amat.base(),Bmat.base(),cback);
-  args.GetReturnValue().Set(BLASMatrixToBuffer(Cmat,isolate));
+  args.GetReturnValue().Set(ConstructArray(isolate,ma,Cmat));
 }
 
 INSTANCE4(SOLVE)
@@ -86,13 +89,15 @@ template <class T>
 void TTRANSPOSE(const FunctionCallbackInfo<Value> &args) {
   auto isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  if (args.Length() != 1)
-    ThrowE(isolate,"Expected one argument to DTRANSPOSE function");
-  BLASMatrix<T> Amat;
-  ObjectToBLASMatrix<T>(isolate,*(args[0]),Amat);
+  if (args.Length() != 2) {
+    ThrowE(isolate,"Expected two arguments to DTRANSPOSE function");
+    return;
+  }
+  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
+  auto ma = Local<Function>::Cast(args[1]);
   BLASMatrix<T> Cmat(Amat.cols, Amat.rows);
   blocked_transpose(Amat.base(),Cmat.base(),Amat.rows,Amat.cols);
-  args.GetReturnValue().Set(BLASMatrixToBuffer(Cmat,isolate));
+  args.GetReturnValue().Set(ConstructArray(isolate,ma,Cmat));
 }
 
 INSTANCE4(TRANSPOSE)

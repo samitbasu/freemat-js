@@ -45,6 +45,14 @@ describe('double assignment tests', function() {
         assert.isTrue(a.get(1).imag === 1);
         assert.isTrue(a.is_complex);
     });
+    it('should choose complex arrays for insertion into an empty one', () => {
+        let a = dbl.make_array([4,1]);
+        for (let i=1;i<=4;i++)
+            a = a.set(i,dbl.make_scalar(i,-i));
+        assert.isTrue(a.is_complex);
+        for (let i=1;i<=4;i++)
+            assert.isTrue(a.get(i).equals(dbl.make_scalar(i,-i)).bool());
+    });
     it('should automatically demote complex arrays to real ones', () => {
         let a = dbl.make_array([10,1]);
         for (let i=1;i<=10;i++) {

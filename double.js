@@ -1,4 +1,4 @@
-const mat = require('./build/Release/mat');
+const mat = require('./build/Debug/mat');
 
 // For speed purposes (and yes, I benchmarked first)
 // it makes sense to have 6 permutations of each operator.
@@ -341,7 +341,7 @@ class DoubleArray {
     }
     mtimes(other) {
         if (other instanceof DoubleArray) {
-            return new DoubleArray([this.dims[0],other.dims[1]], new Float64Array(mat.DGEMM(this,other)));
+            return mat.DGEMM(this,other,make_array);
         }
         throw "unhandled case for matrix times";
     }
@@ -463,25 +463,11 @@ const make_scalar = function(real,imag = 0) {
         return new ComplexScalar(real,imag);
 }
 
-/*
-const make_scalar = function(real, imag = 0) {
-    if (imag === 0) {
-        let p = new DoubleArray([1,1],real);
-        p.is_scalar = true;
-        return p;
-    } else {
-        let p = new DoubleArray([1,1],real,imag);
-        p.is_scalar = true;
-        return p;
-    }
-}
-*/
-
-const make_array = function(dims) {
-    return new DoubleArray(dims);
+const make_array = function(dims, real = null, imag = []) {
+    return new DoubleArray(dims, real, imag);
 }
 
-function print(A) {
+function print_real(A) {
     let line = '';
     for (let i=0;i<A.dims[0];i++) {
         for (let j=0;j<A.dims[1];j++) {
@@ -491,6 +477,27 @@ function print(A) {
     }
     return line;
 }
+
+function print_complex(A) {
+    let line = '';
+    for (let i=0;i<A.dims[0];i++) {
+        for (let j=0;j<A.dims[1];j++) {
+            line += A.real[i+j*A.dims[0]] + "+" + A.imag[i+j*A.dims[0]] + "i  ";
+        }
+        line += '\n';
+    }
+    return line;
+}
+
+
+function print(A) {
+    if (A.is_complex) {
+        return print_complex(A);
+    } else {
+        return print_real(A);
+    }
+}
+
 ComplexScalar.prototype.is_scalar = true;
 ComplexScalar.prototype.is_complex = true;
 DoubleScalar.prototype.is_scalar = true;
@@ -507,20 +514,21 @@ function initialize() {
 module.exports.init = initialize;
 module.exports.make_scalar = make_scalar;
 module.exports.make_array = make_array;
+
 module.exports.matmul = (a,b) => {
-    return new DoubleArray([a.dims[0],b.dims[1]],
-                           new Float64Array(mat.DGEMM(a,b)));
+    return mat.DGEMM(a,b,make_array);
 }
+
 module.exports.matsolve = (a,b) => {
-    return new DoubleArray([a.dims[1],b.dims[1]],
-                           new Float64Array(mat.DSOLVE(a,b,(x) => {
-                               console.log(x);
-                           })));
+    if (!a.is_complex && !b.is_complex)
+        return mat.DSOLVE(a,b,console.log,make_array);
+    return mat.ZSOLVE(a,b,console.log,make_array);
 }
+
 module.exports.transpose = (a) => {
-    return new DoubleArray([a.dims[1],a.dims[0]],
-                           new Float64Array(mat.DTRANSPOSE(a)));
+    return mat.DTRANSPOSE(a,make_array);
 }
+
 module.exports.print = print;
 module.exports.is_scalar = is_scalar;
 DoubleScalar.prototype.type = module.exports;

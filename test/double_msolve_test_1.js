@@ -35,12 +35,14 @@ describe('msolve tests', function() {
                 if (i < dim)
                     C = C.set([i+1,i],dbl.make_scalar(1,-1));
             }
+            console.log(dbl.print(C));
             let B = dbl.make_array([dim,1]);
             for (let i=1;i<=dim;i++) {
                 B = B.set(i,dbl.make_scalar(i,-i));
-                console.log(B.get(i));
             }
+            console.log(dbl.print(B));
             const D = dbl.matsolve(C,B);
+            console.log(dbl.print(D));
             let T = dbl.make_array([dim,1]);
             const coeffs = [dbl.make_scalar(1,-1),dbl.make_scalar(1,1),dbl.make_scalar(-1,1),dbl.make_scalar(-1,-1)];
             for (let i=1;i<=dim;i++) {
