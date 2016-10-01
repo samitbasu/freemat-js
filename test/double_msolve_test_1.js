@@ -27,7 +27,7 @@ describe('msolve tests', function() {
             }
         });
     }
-    for (let dim of [2,4,8]) {
+    for (let dim of [2,4,8,32,64,128]) {
         it(`should correctly solve A x = b for complex matrices of size ${dim} x ${dim}`, () => {
             let C = dbl.make_array([dim,dim]);
             for (let i=1;i<=dim;i++) {
@@ -35,28 +35,22 @@ describe('msolve tests', function() {
                 if (i < dim)
                     C = C.set([i+1,i],dbl.make_scalar(1,-1));
             }
-            console.log(dbl.print(C));
             let B = dbl.make_array([dim,1]);
             for (let i=1;i<=dim;i++) {
                 B = B.set(i,dbl.make_scalar(i,-i));
             }
-            console.log(dbl.print(B));
             const D = dbl.matsolve(C,B);
-            console.log(dbl.print(D));
             let T = dbl.make_array([dim,1]);
-            const coeffs = [dbl.make_scalar(1,-1),dbl.make_scalar(1,1),dbl.make_scalar(-1,1),dbl.make_scalar(-1,-1)];
+            let recip_alpha = dbl.make_scalar(0.5,-0.5);
+            let beta = dbl.make_scalar(1,-1);
+            let prev = dbl.make_scalar(0);
             for (let i=1;i<=dim;i++) {
-                let accum = dbl.make_scalar(0);
-                for (let j=1;j<=i;j++) {
-                    const ndx = ((i-j) + dim*4) % 4;
-                    accum = accum.plus(B.get(i).times(coeffs[ndx]));
-                }
-                T = T.set(i,accum.times(dbl.make_scalar(0.5)));
+                T = T.set(i,(B.get(i).minus(prev.times(beta))).times(recip_alpha));
+                prev = T.get(i);
             }
             for (let i=1;i<=dim;i++) {
-                console.log(B.get(i),D.get(i),T.get(i));
+                assert.isTrue(T.get(i).equals(D.get(i)).bool());
             }
-            assert.isTrue(false);
         });
     }
     for (let dim of sizes) {
