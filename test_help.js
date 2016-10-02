@@ -75,6 +75,11 @@ function array_print(A) {
 }
 
 function mat_equal(A,B) {
+    if (A.is_scalar && B.is_scalar) {
+        if (A.is_array) A = A.to_scalar();
+        if (B.is_array) B = B.to_scalar();
+        return A.equals(B).bool();
+    }
     if (A.dims.length !== B.dims.length) return false;
     if (A.dims.length !== 2) return false;
     if (A.dims[0] !== B.dims[0]) return false;

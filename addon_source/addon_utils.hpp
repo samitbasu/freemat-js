@@ -129,7 +129,7 @@ namespace FM {
   Local<Value> CArrayToTypedArray(double *p, int len, Isolate *isolate) {
     auto buff = ArrayBuffer::New(isolate, p, len*sizeof(double),
                                  ArrayBufferCreationMode::kInternalized);
-    return Float64Array::New(buff,0,len*sizeof(double));
+    return Float64Array::New(buff,0,len);
   }
   
   template <class T>

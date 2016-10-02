@@ -48,4 +48,24 @@ describe('transpose tests', function() {
             });
         }
     }
+    it('should be (transpose) idempotent for real scalars', () => {
+        const C = dbl.make_scalar(5);
+        const D = C.transpose();
+        assert.isTrue(C.equals(D).bool());
+    });
+    it('should be (transpose) idempotent for complex scalars', () => {
+        const C = dbl.make_scalar(5,3);
+        const D = C.transpose();
+        assert.isTrue(C.equals(D).bool());
+    });
+    it('should be (hermitian) idempotent for real scalars', () => {
+        const C = dbl.make_scalar(5);
+        const D = C.hermitian();
+        assert.isTrue(C.equals(D).bool());
+    });
+    it('should be (hermitian) equivalent to conjugation for complex scalars', () => {
+        const C = dbl.make_scalar(5,3);
+        const D = C.hermitian();
+        assert.isTrue(C.conjugate().equals(D).bool());
+    });
 });

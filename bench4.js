@@ -21,7 +21,7 @@ console.log('loop custom - fallback');
 rep_time(() => {
     b = a.make_scalar(1,0);
     for (let ndx=0;ndx<A.length;ndx++) {
-	A.real[ndx] = A.real[ndx]|0 + b.real;
+	A.real[ndx] = A.real[ndx]||0 + b.real;
     }
 }, reps);
 
@@ -45,7 +45,7 @@ rep_time(() => {
 console.log('loop custom | function access | default');
 rep_time(() => {
     b = a.make_scalar(1,0);
-    foo = (b,ndx) => (b.real|0);
+    foo = (b,ndx) => (b.real||0);
     for (let ndx=0;ndx<A.length;ndx++) {
 	A.real[ndx] = A.real[ndx] + foo(b,ndx);
     }
@@ -54,7 +54,7 @@ rep_time(() => {
 console.log('loop custom | function access | default, func arg');
 rep_time(() => {
     b = a.make_scalar(1,0);
-    foo = (b,ndx) => (b.real|0);
+    foo = (b,ndx) => (b.real||0);
     adder = (A,B,foo) => {
 	for (let ndx=0;ndx<A.length;ndx++) {
 	    A.real[ndx] = A.real[ndx] + foo(B,ndx);

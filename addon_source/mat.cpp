@@ -102,6 +102,25 @@ void TTRANSPOSE(const FunctionCallbackInfo<Value> &args) {
 
 INSTANCE4(TRANSPOSE)
 
+template <class T>
+void THERMITIAN(const FunctionCallbackInfo<Value> &args) {
+  auto isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  if (args.Length() != 2) {
+    ThrowE(isolate,"Expect two arguments to ZHERMITIAN function");
+    return;
+  }
+  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
+  auto ma = Local<Function>::Cast(args[1]);
+  BLASMatrix<T> Cmat(Amat.cols, Amat.rows);
+  blocked_hermitian(Amat.base(),Cmat.base(),Amat.rows,Amat.cols);
+  args.GetReturnValue().Set(ConstructArray(isolate,ma,Cmat));
+}
+
+void ZHERMITIAN(const FunctionCallbackInfo<Value> &args) {
+  THERMITIAN<Complex<double> >(args);
+}
+
 void Init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "DGEMM", DGEMM);
   NODE_SET_METHOD(exports, "ZGEMM", ZGEMM);
@@ -109,6 +128,7 @@ void Init(Local<Object> exports) {
   NODE_SET_METHOD(exports, "ZSOLVE", ZSOLVE);
   NODE_SET_METHOD(exports, "DTRANSPOSE", DTRANSPOSE);
   NODE_SET_METHOD(exports, "ZTRANSPOSE", ZTRANSPOSE);
+  NODE_SET_METHOD(exports, "ZHERMITIAN", ZHERMITIAN);
 }
 
 NODE_MODULE(mat, Init)

@@ -14,6 +14,10 @@ function dmsr(x) {
     return dbl.make_scalar(x,0);
 }
 
+function dml(x) {
+    return dbl.make_logical_scalar(x);
+}
+
 function vector_vector_test(a,b,op) {
     const complex_flag = (a.is_complex || b.is_complex);
     const c = op.func(a,b);
@@ -107,7 +111,20 @@ const cases = [{name: 'addition',
 		    const c0 = ((ar + ai*ratio) / den);
 		    const c1 = ((ai - ar*ratio) / den);
 		    return dmsc(c0,c1);
-		}}];
+		}},
+               {
+                   name: 'less than',
+                   func: (x,y) => x.lt(y),
+                   op_real: (a,b) => dml(real(a)<real(b)),
+                   op_complex: (a,b) => dml(real(a) < real(b))
+               },
+               {
+                   name: 'greater than',
+                   func: (x,y) => x.gt(y),
+                   op_real: (a,b) => dml(real(a)>real(b)),
+                   op_complex: (a,b) => dml(real(a)>real(b))
+               }
+              ];
 
 const scalar_cases = [
     {
@@ -169,7 +186,7 @@ for (let mk of scalar_cases) {
                 let c = op.func(a,b);
                 let d = op.op_complex(a,b);
                 assert.isTrue(equ(c,d));
-                assert.isTrue(c.is_complex);
+                assert.isTrue(c.is_logical || c.is_complex);
             });
             it(`should perform scalar ${op.name} correctly with a real and complex value`, () => {
                 let a = dmsr(5);
