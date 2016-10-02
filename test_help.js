@@ -8,6 +8,16 @@ function randMat(dims) {
     return C;
 }
 
+function randMatComplex(dims) {
+    let C = dbl.make_array(dims);
+    for (let ndx=0;ndx<C.length;ndx++) {
+	C.real[ndx] = Math.floor(Math.random()*10);
+        C.imag[ndx] = Math.floor(Math.random()*10);
+    }
+    C.is_complex = true;
+    return C;
+}
+
 function testMat(N,M,imag_scale = 0) {
     let C = dbl.make_array([N,M]);
     for (let row=1;row<=N;row++)
@@ -71,7 +81,7 @@ function mat_equal(A,B) {
     if (A.dims[1] !== B.dims[1]) return false;
     for (let row=1;row<=A.dims[0];row++) {
         for (let col=1;col<=A.dims[1];col++) {
-            if (!A.get([row,col]).equals(B.get([row,col]))) {
+            if (!A.get([row,col]).equals(B.get([row,col])).bool()) {
                 console.log(`Unequal: ${JSON.stringify(A.get([row,col]))} ${JSON.stringify(B.get([row,col]))}`);
                 mat_print(A);
                 mat_print(B);
@@ -86,7 +96,8 @@ function mat_equal(A,B) {
 module.exports.tic = tic;
 module.exports.time_it = time_it;
 module.exports.rep_time = rep_time;
-module.exports.randMat = (dims) => randMat(dims);
+module.exports.randMat = randMat;
+module.exports.randMatComplex = randMatComplex;
 module.exports.testMat = (N,M) => testMat(N,M);
 module.exports.testMatComplex = (N,M,iscale) => testMat(N,M,1);
 module.exports.mat_print = array_print;

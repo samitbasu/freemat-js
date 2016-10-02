@@ -1,6 +1,6 @@
 // This module is for the division operator
 
-module.exports.scalar_real = (a,b) => a/b;
+module.exports.scalar_real = (a,b,mk) => mk(a/b);
 
 function cdiv(ar,ai,br,bi) {
     let ratio, den;
@@ -58,7 +58,10 @@ function cdiv(ar,ai,br,bi) {
     return [c0,c1];
 }
 
-module.exports.scalar_complex = cdiv;
+module.exports.scalar_complex = (ar,ai,br,bi,mk) => {
+    const f = cdiv(ar,ai,br,bi);
+    return mk(f[0],f[1]);
+}
 
 module.exports.vector_scalar_real = (c,a,b) => {
     for (let ndx = 0;ndx < a.length;ndx++) {

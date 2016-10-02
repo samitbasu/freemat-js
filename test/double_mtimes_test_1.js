@@ -40,14 +40,14 @@ describe('mtimes tests', function() {
         });
     }
     for (let dim of sizes) {
-        it(`should correctly multiple real rectangular matrices of size ${dim} x ${dim*2}`, () => {
+        it(`should correctly multiply real rectangular matrices of size ${dim} x ${dim*2}`, () => {
             const C = tst.testMat(dim,2*dim);
             const D = tst.testMat(2*dim,dim);
             mtimes_test(C,D);
         });
     }
     for (let dim of sizes) {
-        it(`should correctly multiple complex rectangular matrices of size ${dim} x ${dim*2}`, () => {
+        it(`should correctly multiply complex rectangular matrices of size ${dim} x ${dim*2}`, () => {
             const C = tst.testMatComplex(dim,2*dim);
             const D = tst.testMatComplex(2*dim,dim);
             mtimes_test(C,D);

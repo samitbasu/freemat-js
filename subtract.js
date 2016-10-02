@@ -1,9 +1,9 @@
 // This module is for the subtraction operator
 'use strict';
 
-module.exports.scalar_real = (a,b) => a-b;
+module.exports.scalar_real = (a,b,mk) => mk(a-b);
 
-module.exports.scalar_complex = (ar,ai,br,bi) => [ar-br,ai-bi];
+module.exports.scalar_complex = (ar,ai,br,bi,mk) => mk(ar-br,ai-bi);
 
 module.exports.vector_scalar_real = (c,a,b) => {
     for (let ndx = 0;ndx < a.length;ndx++) {

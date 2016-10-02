@@ -1,3 +1,4 @@
+'use strict';
 const mat = require('./build/Debug/mat');
 
 // For speed purposes (and yes, I benchmarked first)
@@ -35,9 +36,9 @@ const op_subtract = require('./subtract.js');
 const op_times = require('./multiply.js');
 const op_rdivide = require('./rdivide.js');
 const op_ldivide = {
-    scalar_real : (a,b) => op_rdivide.scalar_real(b,a),
-    scalar_complex: (ar,ai,br,bi) =>
-	op_rdivide.scalar_complex(br,bi,ar,ai), 
+    scalar_real : (a,b,mk) => op_rdivide.scalar_real(b,a,mk),
+    scalar_complex: (ar,ai,br,bi,mk) =>
+	op_rdivide.scalar_complex(br,bi,ar,ai,mk), 
     vector_scalar_real: (c,a,b) =>
 	op_rdivide.scalar_vector_real(c,b,a),
     vector_scalar_complex: (c,a,b) =>
@@ -56,9 +57,17 @@ function is_scalar(x) {
     return ((typeof(x) === 'number') || (x.is_scalar));
 }
 
-function real_part(x) {
+function real_scalar(x) {
     if (typeof(x) === 'number') return x;
+    if (x.is_array) return x.real[0];
     return x.real;
+}
+
+function imag_scalar(x) {
+    if (!x.is_complex) return 0;
+    if (typeof(x) === 'number') return 0;
+    if (x.is_array) return x.imag[0];
+    return x.imag;
 }
 
 function compute_ndx(dims,x) {
@@ -179,6 +188,14 @@ class DoubleArray {
         this.is_complex = (imag.length !== 0);
         this.is_scalar = (this.length === 1);
     }
+    to_scalar() {
+        if (this.is_scalar) {
+            if (this.is_complex)
+                return make_scalar(this.real[0],this.imag[0]);
+            return make_scalar(this.real[0]);
+        }
+        throw "Error!";
+    }
     resize(new_dims) {
         // Resize the array to the new dimensions.  There are several considerations:
         //  1.  If the resize is a vector one and this is a vector and the capacity
@@ -265,7 +282,7 @@ class DoubleArray {
             }
         }
 	if ((where.is_scalar||0) && (what.is_scalar||0) && !what.is_complex) {
-	    this.real[where-1] = real_part(what);
+	    this.real[where-1] = real_scalar(what);
 	    return this;
 	}
         if ((where.is_scalar||0) && (what.is_scalar||0) && (what.is_complex||0)) {
@@ -280,7 +297,7 @@ class DoubleArray {
         }
         if (scalar_case && what.is_scalar && !what.is_complex) {
             const ndx = compute_ndx(this.dims,where);
-            this.real[ndx] = real_part(what);
+            this.real[ndx] = real_scalar(what);
             return this;
         }
         if (scalar_case && what.is_scalar && what.is_complex) {
@@ -292,15 +309,21 @@ class DoubleArray {
         throw `unhandled case for set in DoubleArray ${where} and ${JSON.stringify(what)}`;
     }
     binop(other,op) {
+        if (other.is_scalar && other.is_array) {
+            other = other.to_scalar();
+        }
         if (this.is_scalar && other.is_scalar) {
-            if (other.is_complex || this.is_complex) {
-                let ret = make_scalar(0,0);
-                op.scalar_scalar_complex(ret,this,other);
-                return ret;
-            }
-            let ret = make_scalar(0);
-            op.scalar_scalar_real(ret,this,other);
-            return ret;
+            if (other.is_complex || this.is_complex) 
+                return op.scalar_complex(real_scalar(this),imag_scalar(this),
+                                         real_scalar(other),imag_scalar(other),
+                                         make_scalar);
+            return op.scalar_real(real_scalar(this),
+                                  real_scalar(other),
+                                  make_scalar);
+        }
+        if (this.is_scalar) {
+            let that = this.to_scalar();
+            return that.binop(other,op);
         }
         if (other.is_scalar) {
             if (other.is_complex || this.is_complex) {
@@ -340,10 +363,17 @@ class DoubleArray {
 	return this.binop(other,op_ldivide);
     }
     mtimes(other) {
-        if (other instanceof DoubleArray) {
+        if (this.is_scalar || other.is_scalar)
+            return this.times(other);
+        if (!this.is_complex && !other.is_complex)
             return mat.DGEMM(this,other,make_array);
-        }
-        throw "unhandled case for matrix times";
+        return mat.ZGEMM(this,other,make_array);
+    }
+    transpose() {
+        return mat.DTRANSPOSE(this,make_array);
+    }
+    hermitian() {
+        return mat.DTRANSPOSE(this,make_array);
     }
 }
 
@@ -363,12 +393,14 @@ class ComplexScalar {
     }
     binop(other,op) {
         if (other.is_scalar && other.is_complex) {
-	    const tmp = op.scalar_complex(this.real,this.imag,other.real,other.imag);
-	    return new ComplexScalar(tmp[0],tmp[1]);
+            return op.scalar_complex(this.real,this.imag,
+                                     real_scalar(other),imag_scalar(other),
+                                     make_scalar);
         }
         if (other.is_scalar && !other.is_complex) {
-	    const tmp = op.scalar_complex(this.real,this.imag,other.real,0);
-	    return new ComplexScalar(tmp[0],tmp[1]);
+            return op.scalar_complex(this.real,this.imag,
+                                     real_scalar(other),0,
+                                     make_scalar);
         }
         let ret = make_array(other.dims).complexify();
 	op.scalar_vector_complex(ret,this,other);
@@ -413,11 +445,12 @@ class DoubleScalar {
         this.real = real;
     };
     binop(other,op) {
-        if (other.is_scalar && !other.is_complex) 
-            return new DoubleScalar(op.scalar_real(this.real,other.real));
+        if (other.is_scalar && !other.is_complex)
+            return op.scalar_real(this.real,real_scalar(other),make_scalar);
         if (other.is_scalar && other.is_complex) {
-	    const tmp = op.scalar_complex(this.real,0,other.real,other.imag);
-	    return new ComplexScalar(tmp[0],tmp[1]);
+            return op.scalar_complex(this.real,0,
+                                     real_scalar(other),imag_scalar(other),
+                                     make_scalar);
 	}
 	if (other.is_complex) {
 	    let ret = make_array(other.dims).complexify();
@@ -500,12 +533,15 @@ function print(A) {
 
 ComplexScalar.prototype.is_scalar = true;
 ComplexScalar.prototype.is_complex = true;
+ComplexScalar.prototype.is_array = false;
 DoubleScalar.prototype.is_scalar = true;
 DoubleScalar.prototype.is_complex = false;
 DoubleScalar.prototype.imag = 0;
-DoubleArray.prototype.is_scalar = false;
+DoubleScalar.prototype.is_array = false;
+DoubleArray.prototype.is_array = true;
 Number.prototype.is_scalar = true;
 Number.prototype.is_complex = false;
+Number.prototype.is_array = false;
 
 function initialize() {
     return this;
@@ -531,4 +567,6 @@ module.exports.transpose = (a) => {
 
 module.exports.print = print;
 module.exports.is_scalar = is_scalar;
+module.exports.real_scalar = real_scalar;
+module.exports.imag_scalar = imag_scalar;
 DoubleScalar.prototype.type = module.exports;

@@ -4,7 +4,7 @@
 
 const op_utils = require('./op_utils');
 
-module.exports.scalar_real = (a,b) => a*b;
+module.exports.scalar_real = (a,b,mk) => mk(a*b);
 
 function cmul(ar,ai,br,bi) {
     let cr = 0;
@@ -32,7 +32,10 @@ function cmul(ar,ai,br,bi) {
     return [cr,ci];
 }
 
-module.exports.scalar_complex = cmul;
+module.exports.scalar_complex = (ar,ai,br,bi,mk) => {
+    const f = cmul(ar,ai,br,bi);
+    return mk(f[0],f[1]);
+}
 
 module.exports.vector_scalar_real = (c,a,b) => {
     for (let ndx = 0;ndx < a.length;ndx++) {
