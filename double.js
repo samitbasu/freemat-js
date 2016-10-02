@@ -31,12 +31,14 @@ const mat = require('./build/Release/mat');
 // optimizations.  But it already represents a 2x penalty over the c++
 // version (FreeMat).  
 
-const op_lt = require('./lt.js');
-const op_gt = require('./gt.js');
-const op_add = require('./add.js');
-const op_subtract = require('./subtract.js');
-const op_times = require('./multiply.js');
-const op_rdivide = require('./rdivide.js');
+const op_lt = require('./ops/lt.js');
+const op_gt = require('./ops/gt.js');
+const op_le = require('./ops/le.js');
+const op_ge = require('./ops/ge.js');
+const op_add = require('./ops/add.js');
+const op_subtract = require('./ops/subtract.js');
+const op_times = require('./ops/multiply.js');
+const op_rdivide = require('./ops/rdivide.js');
 const op_ldivide = {
     scalar_real : (a,b,mk) => op_rdivide.scalar_real(b,a,mk),
     scalar_complex: (ar,ai,br,bi,mk) =>
@@ -432,8 +434,14 @@ class DoubleArray {
     lt(other) {
         return this.cmpop(other,op_lt);
     }
+    le(other) {
+        return this.cmpop(other,op_le);
+    }
     gt(other) {
         return this.cmpop(other,op_gt);
+    }
+    ge(other) {
+        return this.cmpop(other,op_ge);
     }
     mtimes(other) {
         if (this.is_scalar || other.is_scalar)
@@ -521,6 +529,12 @@ class ComplexScalar {
     }
     gt(other) {
         return this.cmpop(other,op_gt);
+    }
+    le(other) {
+        return this.cmpop(other,op_le);
+    }
+    ge(other) {
+        return this.cmpop(other,op_ge);
     }
 };
 
@@ -616,8 +630,14 @@ class DoubleScalar {
     lt(other) {
         return this.cmpop(other,op_lt);
     }
+    le(other) {
+        return this.cmpop(other,op_le);
+    }
     gt(other) {
         return this.cmpop(other,op_gt);
+    }
+    ge(other) {
+        return this.cmpop(other,op_ge);
     }
 }
 

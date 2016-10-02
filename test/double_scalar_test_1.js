@@ -123,6 +123,18 @@ const cases = [{name: 'addition',
                    func: (x,y) => x.gt(y),
                    op_real: (a,b) => dml(real(a)>real(b)),
                    op_complex: (a,b) => dml(real(a)>real(b))
+               },
+               {
+                   name: 'less equals',
+                   func: (x,y) => x.le(y),
+                   op_real: (a,b) => dml(real(a)<=real(b)),
+                   op_complex: (a,b) => dml(real(a) <= real(b))
+               },
+               {
+                   name: 'greater equals',
+                   func: (x,y) => x.ge(y),
+                   op_real: (a,b) => dml(real(a)>=real(b)),
+                   op_complex: (a,b) => dml(real(a)>=real(b))
                }
               ];
 
