@@ -44,6 +44,6 @@ module.exports.vector_vector_real = (c,a,b) => {
 module.exports.vector_vector_complex = (c,a,b) => {
     for (let ndx = 0; ndx < a.length; ndx++) {
 	c.real[ndx] = a.real[ndx] + b.real[ndx];
-	c.imag[ndx] = (a.imag[ndx]|0) + (b.imag[ndx]|0);
+	c.imag[ndx] = (a.imag[ndx]||0) + (b.imag[ndx]||0);
     }
 }

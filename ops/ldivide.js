@@ -1,10 +1,15 @@
 // This module is for the division operator
 
-module.exports.scalar_real = (a,b,mk) => mk(a/b);
+'use strict';
+
+const op_utils = require('./op_utils');
+
+module.exports.scalar_real = (a,b,mk) => mk(b/a);
 
 function cdiv(ar,ai,br,bi) {
     let ratio, den;
     let abr, abi, cr;
+    let c1, c0;
 
     if ((ai == 0) && (bi == 0)) {
       c1 = 0;
@@ -59,60 +64,49 @@ function cdiv(ar,ai,br,bi) {
 }
 
 module.exports.scalar_complex = (ar,ai,br,bi,mk) => {
-    const f = cdiv(ar,ai,br,bi);
+    const f = cdiv(br,bi,ar,ai);
     return mk(f[0],f[1]);
 }
 
 module.exports.vector_scalar_real = (c,a,b) => {
     for (let ndx = 0;ndx < a.length;ndx++) {
-	c.real[ndx] = a.real[ndx] / b.real;
+	c.real[ndx] = b.real / a.real[ndx];
     }
 }
 
 module.exports.vector_scalar_complex = (c,a,b) => {
     for (let ndx = 0;ndx < a.length;ndx++) {
-	const ar = a.real[ndx];
-	const ai = (a.imag[ndx]|0);
-	const br = b.real;
-	const bi = b.imag;
-	const r = cdiv(ar,ai,br,bi);
-	c.real[ndx] = r[0];
-	c.imag[ndx] = r[1];
+        const f = cdiv(b.real,b.imag,a.real[ndx],a.imag[ndx]||0);
+        c.real[ndx] = f[0];
+        c.imag[ndx] = f[1];
     }
 }
 
 module.exports.scalar_vector_real = (c,a,b) => {
     for (let ndx = 0; ndx < b.length;ndx++) {
-	c.real[ndx] = a.real / b.real[ndx];
+	c.real[ndx] = b.real[ndx] / a.real;
     }
 }
 
 module.exports.scalar_vector_complex = (c,a,b) => {
-    for (let ndx = 0; ndx < b.length;ndx++) {
-	const ar = a.real;
-	const ai = a.imag;
-	const br = b.real[ndx];
-	const bi = (b.imag[ndx]|0);
-	const r = cdiv(ar,ai,br,bi);
-	c.real[ndx] = r[0];
-	c.imag[ndx] = r[1];
-    }
+    for (let ndx = 0;ndx < b.length;ndx++) {
+        const f = cdiv(b.real[ndx],b.imag[ndx]||0,a.real,a.imag);
+        c.real[ndx] = f[0];
+        c.imag[ndx] = f[1];
+    }    
 }
 
 module.exports.vector_vector_real = (c,a,b) => {
     for (let ndx = 0; ndx < a.length; ndx++) {
-	c.real[ndx] = a.real[ndx] / b.real[ndx];
+	c.real[ndx] = b.real[ndx] / a.real[ndx];
     }
 }
 
 module.exports.vector_vector_complex = (c,a,b) => {
-    for (let ndx = 0; ndx < a.lengthe; ndx++) {
-	const ar = a.real[ndx];
-	const ai = a.imag[ndx]|0;
-	const br = b.real[ndx];
-	const bi = (b.imag[ndx]|0);
-	const r = cdiv(ar,ai,br,bi);
-	c.real[ndx] = r[0];
-	c.imag[ndx] = r[1];
+    for (let ndx = 0;ndx < a.length;ndx++) {
+        const f = cdiv(b.real[ndx],b.imag[ndx]||0,
+                       a.real[ndx],a.imag[ndx]||0);
+        c.real[ndx] = f[0];
+        c.imag[ndx] = f[1];        
     }
 }

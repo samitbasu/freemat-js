@@ -35,27 +35,13 @@ const op_lt = require('./ops/lt.js');
 const op_gt = require('./ops/gt.js');
 const op_le = require('./ops/le.js');
 const op_ge = require('./ops/ge.js');
+const op_eq = require('./ops/eq.js');
+const op_ne = require('./ops/ne.js');
 const op_add = require('./ops/add.js');
 const op_subtract = require('./ops/subtract.js');
 const op_times = require('./ops/multiply.js');
 const op_rdivide = require('./ops/rdivide.js');
-const op_ldivide = {
-    scalar_real : (a,b,mk) => op_rdivide.scalar_real(b,a,mk),
-    scalar_complex: (ar,ai,br,bi,mk) =>
-	op_rdivide.scalar_complex(br,bi,ar,ai,mk), 
-    vector_scalar_real: (c,a,b) =>
-	op_rdivide.scalar_vector_real(c,b,a),
-    vector_scalar_complex: (c,a,b) =>
-	op_rdivide.scalar_vector_complex(c,b,a),
-    scalar_vector_real: (c,a,b) =>
-	op_rdivide.vector_scalar_real(c,b,a),
-    scalar_vector_complex: (c,a,b) =>
-	op_rdivide.vector_scalar_complex(c,b,a),
-    vector_vector_real: (c,a,b) =>
-	op_rdivide.vector_vector_real(c,b,a),
-    vector_vector_complex: (c,a,b) =>
-	op_rdivide.vector_vector_complex(c,b,a)
-}
+const op_ldivide = require('./ops/ldivide.js');
 
 function is_scalar(x) {
     return ((typeof(x) === 'number') || (x.is_scalar));
@@ -443,6 +429,12 @@ class DoubleArray {
     ge(other) {
         return this.cmpop(other,op_ge);
     }
+    eq(other) {
+        return this.cmpop(other,op_eq);
+    }
+    ne(other) {
+        return this.cmpop(other,op_ne);
+    }
     mtimes(other) {
         if (this.is_scalar || other.is_scalar)
             return this.times(other);
@@ -466,6 +458,9 @@ class ComplexScalar {
     constructor(real,imag) {
         this.real = real;
         this.imag = imag;
+    }
+    isNaN() {
+        return Number.isNaN(this.real) || Number.isNaN(this.imag);
     }
     equals(other) {
         if (other instanceof ComplexScalar) {
@@ -536,6 +531,12 @@ class ComplexScalar {
     ge(other) {
         return this.cmpop(other,op_ge);
     }
+    eq(other) {
+        return this.cmpop(other,op_eq);
+    }
+    ne(other) {
+        return this.cmpop(other,op_ne);
+    }
 };
 
 class LogicalScalar {
@@ -554,12 +555,18 @@ class LogicalScalar {
             return make_logical_scalar(this.real === other.real);
         throw "Not supported";
     }
+    isNaN() {
+        return false;
+    }
 };
 
 class DoubleScalar {
     constructor(real) {
         this.real = real;
     };
+    isNaN() {
+        return Number.isNaN(this.real);
+    }
     conjugate() {
         return new DoubleScalar(this.real);
     }
@@ -638,6 +645,12 @@ class DoubleScalar {
     }
     ge(other) {
         return this.cmpop(other,op_ge);
+    }
+    eq(other) {
+        return this.cmpop(other,op_eq);
+    }
+    ne(other) {
+        return this.cmpop(other,op_ne);
     }
 }
 

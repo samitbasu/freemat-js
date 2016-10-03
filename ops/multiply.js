@@ -43,8 +43,13 @@ module.exports.vector_scalar_real = (c,a,b) => {
     }
 }
 
-module.exports.vector_scalar_complex = (c,a,b) => 
-    op_utils.vector_scalar_complex_func(c,a,b,cmul);
+module.exports.vector_scalar_complex = (c,a,b) => {
+    for (let ndx = 0;ndx < a.length;ndx++) {
+        const f = cmul(a.real[ndx],a.imag[ndx]||0,b.real,b.imag);
+        c.real[ndx] = f[0];
+        c.imag[ndx] = f[1];
+    }
+}
 
 module.exports.scalar_vector_real = (c,a,b) => {
     for (let ndx = 0; ndx < b.length;ndx++) {
@@ -52,9 +57,13 @@ module.exports.scalar_vector_real = (c,a,b) => {
     }
 }
 
-module.exports.scalar_vector_complex = (c,a,b) =>
-    op_utils.scalar_vector_complex_func(c,a,b,cmul);
-
+module.exports.scalar_vector_complex = (c,a,b) => {
+    for (let ndx = 0;ndx < b.length;ndx++) {
+        const f = cmul(a.real,a.imag,b.real[ndx],b.imag[ndx]||0);
+        c.real[ndx] = f[0];
+        c.imag[ndx] = f[1];
+    }
+}
 
 module.exports.vector_vector_real = (c,a,b) => {
     for (let ndx = 0; ndx < a.length; ndx++) {
@@ -62,5 +71,11 @@ module.exports.vector_vector_real = (c,a,b) => {
     }
 }
 
-module.exports.vector_vector_complex = (c,a,b) => 
-    op_utils.vector_vector_complex_func(c,a,b,cmul);
+module.exports.vector_vector_complex = (c,a,b) => {
+    for (let ndx = 0;ndx < a.length;ndx++) {
+        const f = cmul(a.real[ndx],a.imag[ndx]||0,
+                       b.real[ndx],b.imag[ndx]||0);
+        c.real[ndx] = f[0];
+        c.imag[ndx] = f[1];
+    }
+}

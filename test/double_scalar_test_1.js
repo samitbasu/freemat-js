@@ -30,7 +30,15 @@ function vector_vector_test(a,b,op) {
 	    dv = op.op_complex(av,bv);
 	else
 	    dv = op.op_real(av,bv);
-	assert.isTrue(dv.equals(cv).bool());
+        if (!(dv.isNaN() && cv.isNaN())) {
+            if (!dv.equals(cv).bool()) {
+                console.log(dbl.print(a));
+                console.log(dbl.print(b));
+                console.log(dbl.print(c));
+                console.log("Stop at p = " + p + " with ",dv," versus ",cv," and av=",av," bv=",bv);
+            }
+	    assert.isTrue(dv.equals(cv).bool());
+        }
     }
 }
 
@@ -44,7 +52,16 @@ function scalar_vector_test(a,b,op) {
 	    cv = op.op_complex(a,bv);
 	else
 	    cv = op.op_real(a,bv);
-	assert.isTrue(cv.equals(c.get(p)).bool());
+        const dv = c.get(p);
+        if (!(cv.isNaN() && dv.isNaN())) {
+            if (!cv.equals(dv).bool()) {
+                console.log(dbl.print(a));
+                console.log(dbl.print(b));
+                console.log(dbl.print(c));
+                console.log("Stop at p = " + p + " with ",dv," versus ",cv," and a=",a," bv=",bv);
+            }            
+	    assert.isTrue(cv.equals(dv).bool());
+        }
     }
 }
 
@@ -58,7 +75,16 @@ function vector_scalar_test(a,b,op) {
 	    cv = op.op_complex(av,b);
 	else
 	    cv = op.op_real(av,b);
-	assert.isTrue(cv.equals(c.get(p)).bool());
+        const dv = c.get(p);
+        if (!(cv.isNaN() && dv.isNaN())) {
+            if (!cv.equals(dv).bool()) {
+                console.log(dbl.print(a));
+                console.log(dbl.print(b));
+                console.log(dbl.print(c));
+                console.log("Stop at p = " + p + " with ",dv," versus ",cv," and av=",av," b=",b);
+            }            
+	    assert.isTrue(cv.equals(dv).bool());
+        }
     }
 }
 
@@ -68,75 +94,146 @@ function vectest(a,b,op) {
     return vector_vector_test(a,b,op);
 }
 
-const cases = [{name: 'addition',
-                func: (x,y) => x.plus(y),
-                op_real: (a,b) => dmsr(real(a)+real(b)),
-                op_complex: (c,d) => dmsc(real(c)+real(d),imag(c)+imag(d))
-               },
-	       {name: 'subtraction',
-		func: (x,y) => x.minus(y),
-		op_real: (a,b) => dmsr(real(a)-real(b)),
-		op_complex: (c,d) => dmsc(real(c)-real(d),imag(c)-imag(d))
-	       },
-	       {name: 'element-wise multiplication',
-		func: (x,y) => x.times(y),
-		op_real: (a,b) => dmsr(real(a)*real(b)),
-		op_complex: (c,d) => dmsc(real(c)*real(d) - imag(c)*imag(d),
-					  real(c)*imag(d) + imag(c)*real(d))
-	       },
-	       {name: 'element-wise right division',
-		func: (x,y) => x.rdivide(y),
-		op_real: (a,b) => dmsr(real(a)/real(b)),
-		op_complex: (a,b) => {
-		    const ar = real(a);
-		    const ai = imag(a);
-		    const br = real(b);
-		    const bi = imag(b);
-		    const ratio = bi / br ;
-		    const den = br * (1 + ratio*ratio);
-		    const c0 = ((ar + ai*ratio) / den);
-		    const c1 = ((ai - ar*ratio) / den);
-		    return dmsc(c0,c1);
-		}},
-	       {name: 'element-wise left division',
-		func: (x,y) => x.ldivide(y),
-		op_real: (b,a) => dmsr(real(a)/real(b)),
-		op_complex: (b,a) => {
-		    const ar = real(a);
-		    const ai = imag(a);
-		    const br = real(b);
-		    const bi = imag(b);
-		    const ratio = bi / br ;
-		    const den = br * (1 + ratio*ratio);
-		    const c0 = ((ar + ai*ratio) / den);
-		    const c1 = ((ai - ar*ratio) / den);
-		    return dmsc(c0,c1);
-		}},
-               {
-                   name: 'less than',
-                   func: (x,y) => x.lt(y),
-                   op_real: (a,b) => dml(real(a)<real(b)),
-                   op_complex: (a,b) => dml(real(a) < real(b))
-               },
-               {
-                   name: 'greater than',
-                   func: (x,y) => x.gt(y),
-                   op_real: (a,b) => dml(real(a)>real(b)),
-                   op_complex: (a,b) => dml(real(a)>real(b))
-               },
-               {
-                   name: 'less equals',
-                   func: (x,y) => x.le(y),
-                   op_real: (a,b) => dml(real(a)<=real(b)),
-                   op_complex: (a,b) => dml(real(a) <= real(b))
-               },
-               {
-                   name: 'greater equals',
-                   func: (x,y) => x.ge(y),
-                   op_real: (a,b) => dml(real(a)>=real(b)),
-                   op_complex: (a,b) => dml(real(a)>=real(b))
-               }
-              ];
+function cdiv(ar,ai,br,bi) {
+    let ratio, den;
+    let abr, abi, cr;
+    let c1, c0;
+
+    if ((ai == 0) && (bi == 0)) {
+      c1 = 0;
+      c0 = ar/br;
+      return [c0,c1];
+    }
+    if (bi == 0) {
+      c0 = ar/br;
+      c1 = ai/br;
+      return [c0,c1];
+    }
+    if ((ar == 0) && (bi == 0)) {
+      c0 = 0;
+      c1 = ai/br;
+      return [c0,c1];
+    }
+    if ((ai == 0) && (br == 0)) {
+      c0 = 0;
+      c1 = -ar/bi;
+      return [c0,c1];
+    }
+    if ((ar == br) && (ai == bi)) {
+      c0 = 1; c1 = 0;
+      return [c0,c1];
+    }
+    if( (abr = br) < 0.)
+      abr = - abr;
+    if( (abi = bi) < 0.)
+      abi = - abi;
+    if( abr <= abi )
+      {
+	if(abi == 0) {
+	  if (ai != 0 || ar != 0)
+	    abi = 1.;
+	  c1 = c0 = (abi / abr);
+	  return [c0,c1];
+	}
+	ratio = br / bi ;
+	den = bi * (1 + ratio*ratio);
+	cr = ((ar*ratio + ai) / den);
+	c1 = ((ai*ratio - ar) / den);
+      }
+    else
+      {
+	ratio = bi / br ;
+	den = br * (1 + ratio*ratio);
+	cr = ((ar + ai*ratio) / den);
+	c1 = ((ai - ar*ratio) / den);
+      }
+    c0 = (cr);
+    return [c0,c1];
+}
+
+const cases = [
+    {
+        name: 'addition',
+        func: (x,y) => x.plus(y),
+        op_real: (a,b) => dmsr(real(a)+real(b)),
+        op_complex: (c,d) => dmsc(real(c)+real(d),imag(c)+imag(d)),
+    },
+    {
+        name: 'subtraction',
+	func: (x,y) => x.minus(y),
+	op_real: (a,b) => dmsr(real(a)-real(b)),
+	op_complex: (c,d) => dmsc(real(c)-real(d),imag(c)-imag(d)),
+    },
+    {
+        name: 'element-wise multiplication',
+	func: (x,y) => x.times(y),
+	op_real: (a,b) => dmsr(real(a)*real(b)),
+	op_complex: (c,d) => dmsc(real(c)*real(d) - imag(c)*imag(d),
+				  real(c)*imag(d) + imag(c)*real(d)),
+    },
+    {
+        name: 'element-wise right division',
+	func: (x,y) => x.rdivide(y),
+	op_real: (a,b) => dmsr(real(a)/real(b)),
+	op_complex: (a,b) => {
+	    const ar = real(a);
+	    const ai = imag(a);
+	    const br = real(b);
+	    const bi = imag(b);
+            const f = cdiv(ar,ai,br,bi);
+	    return dmsc(f[0],f[1]);
+	},
+    },
+    {
+        name: 'element-wise left division',
+	func: (x,y) => x.ldivide(y),
+	op_real: (b,a) => dmsr(real(a)/real(b)),
+	op_complex: (b,a) => {
+	    const ar = real(a);
+	    const ai = imag(a);
+	    const br = real(b);
+	    const bi = imag(b);
+            const f = cdiv(ar,ai,br,bi);
+            return dmsc(f[0],f[1]);
+	},
+    },
+    {
+        name: 'less than',
+        func: (x,y) => x.lt(y),
+        op_real: (a,b) => dml(real(a)<real(b)),
+        op_complex: (a,b) => dml(real(a) < real(b)),
+    },
+    {
+        name: 'greater than',
+        func: (x,y) => x.gt(y),
+        op_real: (a,b) => dml(real(a)>real(b)),
+        op_complex: (a,b) => dml(real(a)>real(b)),
+    },
+    {
+        name: 'less equals',
+        func: (x,y) => x.le(y),
+        op_real: (a,b) => dml(real(a)<=real(b)),
+        op_complex: (a,b) => dml(real(a) <= real(b)),
+    },
+    {
+        name: 'greater equals',
+        func: (x,y) => x.ge(y),
+        op_real: (a,b) => dml(real(a)>=real(b)),
+        op_complex: (a,b) => dml(real(a)>=real(b)),
+    },
+    {
+        name: 'equals',
+        func: (x,y) => x.eq(y),
+        op_real: (a,b) => dml(real(a)===real(b)),
+        op_complex: (a,b) => dml((real(a)===real(b)) && (imag(a)===imag(b))),
+    },    
+    {
+        name: 'not equals',
+        func: (x,y) => x.ne(y),
+        op_real: (a,b) => dml(real(a)!==real(b)),
+        op_complex: (a,b) => dml((real(a)!==real(b)) || (imag(a)!==imag(b))),
+    }
+];
 
 const scalar_cases = [
     {
@@ -217,7 +314,8 @@ for (let mk of scalar_cases) {
             });
             it(`should broadcast ${op.name} over an array with complex values`, () => {
                 let c = dmsr(5);
-                let d = tst.testMat(3,5,1);
+                let d = tst.testMatComplex(3,5);
+                assert.isTrue(d.is_complex);
 	        vectest(c,d,op);
             });
             it(`should support broadcast ${op.name} over an array with real values and a complex scalar`, () => {
@@ -227,7 +325,8 @@ for (let mk of scalar_cases) {
             });
             it(`should support ${op.name} over an array with complex values and a complex scalar`, () => {
                 let c = dmsc(5,3);
-                let d = tst.testMat(3,4,1);
+                let d = tst.testMatComplex(3,4);
+                assert.isTrue(d.is_complex);
 	        vectest(c,d,op);
             });
             it(`should broadcast ${op.name} over an array with real values`, () => {
@@ -236,8 +335,9 @@ for (let mk of scalar_cases) {
 	        vectest(c,d,op);
 	    });
             it(`should broadcast ${op.name} over an array with complex values`, () => {
-                let c = tst.testMat(3,5,1);
+                let c = tst.testMatComplex(3,5);
                 let d = dmsr(5);
+                assert.isTrue(c.is_complex);
 	        vectest(c,d,op);
             });
             it(`should support broadcast ${op.name} over an array with real values and a complex scalar`, () => {
@@ -246,8 +346,10 @@ for (let mk of scalar_cases) {
 	        vectest(c,d,op);
             });
             it(`should support ${op.name} over an array with complex values and a complex scalar`, () => {
-                let c = tst.testMat(3,4,1);
+                let c = tst.testMatComplex(3,4);
                 let d = dmsc(5,3);
+                assert.isTrue(c.is_complex);
+                assert.isTrue(d.is_complex);
 	        vectest(c,d,op);
             });
             it(`should support ${op.name} of arrays of real values`, () => {
@@ -257,18 +359,38 @@ for (let mk of scalar_cases) {
             });
             it(`should support ${op.name} of arrays of real and complex values`, () => {
                 let c = tst.testMat(3,4);
-                let d = tst.testMat(3,4,1);
+                let d = tst.testMatComplex(3,4);
+                assert.isTrue(d.is_complex);
 	        vectest(c,d,op);
             });
             it(`should support ${op.name} of arrays of complex and real values`, () => {
-                let c = tst.testMat(3,4,1);
+                let c = tst.testMatComplex(3,4);
                 let d = tst.testMat(3,4);
+                assert.isTrue(c.is_complex);
 	        vectest(c,d,op);
             });
             it(`should support ${op.name} of arrays of complex values`, () => {
-                let c = tst.testMat(3,4,1);
-                let d = tst.testMat(3,4,1);
+                let c = tst.testMatComplex(3,4);
+                let d = tst.testMatComplex(3,4);
+                assert.isTrue(c.is_complex);
+                assert.isTrue(d.is_complex);
 	        vectest(c,d,op);
+            });
+            it(`should produce correct results for ${op.name} with large random real matrices`, () => {
+                let c = tst.randMat([12,12]);
+                let d = tst.randMat([12,12]);
+                vectest(c,d,op);
+            });
+            it(`should produce correct results for ${op.name} with large random complex matrices`, () => {
+                let c = tst.randMatComplex([12,12]);
+                let d = tst.randMatComplex([12,12]);
+                vectest(c,d,op);
+            });
+            it(`should produce correct results for ${op.name} with large random complex/real matrices`, () => {
+                let c = tst.randMat([12,12]);
+                let d = tst.randMatComplex([12,12]);
+                vectest(c,d,op);
+                vectest(d,c,op);
             });
         }
     });
