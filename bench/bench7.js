@@ -1,8 +1,8 @@
 'use strict';
 const chai = require('chai');
 const assert = chai.assert;
-const dbl = require('./double.js');
-const tst = require('./test_help.js');
+const dbl = require('../double.js');
+const tst = require('../test_help.js');
 
 let A = dbl.make_array([512,512,10]);
 console.log(tst.time_it( () => {

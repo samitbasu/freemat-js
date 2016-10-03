@@ -1,5 +1,5 @@
-a = require('./double');
-tst = require('./test_help');
+a = require('../double');
+tst = require('../test_help');
 
 const rep_time = tst.rep_time;
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const dbl = require('./double');
+const dbl = require('../double');
 let dim = 8;
 const C = dbl.make_array([2*dim,dim]);
 for (let i=1;i<=dim;i++) {

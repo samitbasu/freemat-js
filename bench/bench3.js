@@ -1,6 +1,6 @@
-a = require('./double');
+a = require('../double');
 a.init();
-mat = require('./build/Release/mat');
+mat = require('../build/Release/mat');
 A = a.make_array([512,512,10]);
 console.time('loop');
 for (let z=1;z<=10;z++) {

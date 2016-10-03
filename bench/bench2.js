@@ -1,4 +1,4 @@
-a = require('./double');
+a = require('../double');
 a.init();
 p = a.make_scalar(3);
 q = a.make_scalar(6);

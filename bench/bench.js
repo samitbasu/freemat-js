@@ -1,4 +1,4 @@
-a = require('./double');
+a = require('../double');
 p = a.make_scalar(3,4);
 q = a.make_scalar(6,0);
 console.time('loop');

@@ -1,5 +1,5 @@
-a = require('./double');
-tst = require('./test_help');
+a = require('../double');
+tst = require('../test_help');
 
 A = a.make_array([4096,4096]);
 
