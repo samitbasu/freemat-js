@@ -1,3 +1,31 @@
 For power, need to refine operation
 
 Consider slicing as an operation
+
+
+Add - done
+Multiply -  
+Power - 
+LeftDivide - 
+RightDivide - 
+DotLeftDivide - done
+DotRightDivide - done
+DotMultiply - done
+DotPower - 
+Subtract - done
+LessEquals - done
+LessThan - done
+GreaterThan - done
+GreaterEquals - done
+NotEquals - done
+Equals - done
+Or - 
+And - 
+Neg - 
+Not - 
+Plus - 
+Colon - 
+NCat - 
+DoubleColon - 
+Transpose - 
+Hermitian - 

@@ -31,6 +31,9 @@ const mat = require('./build/Release/mat');
 // optimizations.  But it already represents a 2x penalty over the c++
 // version (FreeMat).  
 
+const op_and = require('./ops/and.js');
+const op_or = require('./ops/or.js');
+const op_xor = require('./ops/xor.js');
 const op_lt = require('./ops/lt.js');
 const op_gt = require('./ops/gt.js');
 const op_le = require('./ops/le.js');
@@ -269,6 +272,13 @@ class DoubleArray {
         this.is_complex = true;
         return this;
     }
+    decomplexify() {
+        if (!this.is_complex) return this;
+        if (!this.imag.every( x => (x===0) )) return this;
+        this.imag = [];
+        this.is_complex = false;
+        return this;
+    }
     fast_get(where) {
 	return this.real[where||0];
     }
@@ -329,6 +339,35 @@ class DoubleArray {
             return this;
         }
         throw `unhandled case for set in DoubleArray ${where} and ${JSON.stringify(what)}`;
+    }
+    logop(other,op) {
+        if (other.is_scalar && other.is_array) {
+            other = other.to_scalar();
+        }
+        if (this.is_complex) {
+            this.decomplexify();
+        }
+        if (other.is_complex) {
+            other.decomplexify();
+        }
+        if (this.is_complex || other.is_complex)
+            throw "Cannot use complex values in logical operations";
+        if (this.is_scalar && other.is_scalar) {
+            return op.scalar_real(real_scalar(this),
+                                  real_scalar(other),
+                                  make_logical_scalar);
+        }
+        if (this.is_scalar) {
+            let that = this.to_scalar();
+            return that.logop(other,op);
+        }
+        let ret = make_logical_array(this.dims);
+        if (other.is_scalar) {
+            op.vector_scalar_real(ret,this,other);
+            return ret;
+        }
+        op.vector_vector_real(ret,this,other);
+        return ret;
     }
     cmpop(other,op) {
         if (other.is_scalar && other.is_array) {
@@ -434,6 +473,15 @@ class DoubleArray {
     }
     ne(other) {
         return this.cmpop(other,op_ne);
+    }
+    or(other) {
+        return this.logop(other,op_or);
+    }
+    and(other) {
+        return this.logop(other,op_and);
+    }
+    xor(other) {
+        return this.logop(other,op_xor);
     }
     mtimes(other) {
         if (this.is_scalar || other.is_scalar)
