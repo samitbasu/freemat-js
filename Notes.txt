@@ -19,8 +19,8 @@ GreaterThan - done
 GreaterEquals - done
 NotEquals - done
 Equals - done
-Or - 
-And - 
+Or - done
+And - done
 Neg - 
 Not - 
 Plus - 

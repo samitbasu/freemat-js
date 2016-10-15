@@ -82,11 +82,16 @@ namespace FM {
   }
 
   template <class T = double> 
-  BLASMatrix<T> ObjectToBLASMatrixReal(Isolate * isolate, Value * arg, const char *name = "real") {
+  bool ObjectToBLASMatrixReal(BLASMatrix<T> &mat, Isolate * isolate, Value * arg, const char *name = "real") {
     auto context = isolate->GetCurrentContext();
     auto obj = arg->ToObject(context).ToLocalChecked();
     auto dims = GetDoubleArray(isolate,obj,"dims");
-    BLASMatrix<T> mat(dims[0],dims[1]);
+    if (dims.size() == 1) dims.push_back(1);
+    if (dims.size() > 2) {
+      ThrowE(isolate,"Argument to matrix operation is not 2D");
+      return false;
+    }
+    mat = BLASMatrix<T>(dims[0],dims[1]);
     auto cnt = mat.rows*mat.cols;
     auto val = obj->Get(context,String::NewFromUtf8(isolate, name)).ToLocalChecked();
     if (val->IsFloat64Array()) {
@@ -97,29 +102,32 @@ namespace FM {
       for (int i=0;i<cnt;i++) 
         mat.base()[i] = arr->Get(context,i).ToLocalChecked()->ToNumber(context).ToLocalChecked()->Value();
     }
-    return mat;
+    return true;
   }
 
   template <class T = double>
-  BLASMatrix<Complex<T> > ObjectToBLASMatrixComplex(Isolate * isolate, Value * arg) {
+  bool ObjectToBLASMatrixComplex(BLASMatrix<Complex<T> > &mat, Isolate * isolate, Value * arg) {
     auto context = isolate->GetCurrentContext();
     auto obj = arg->ToObject(context).ToLocalChecked();
-    BLASMatrix<T> real_part(ObjectToBLASMatrixReal(isolate,*obj,"real"));
-    BLASMatrix<T> imag_part(ObjectToBLASMatrixReal(isolate,*obj,"imag"));
-    return BLASMatrixInterleave<T>(real_part,imag_part);
+    BLASMatrix<T> real_part;
+    if (!ObjectToBLASMatrixReal(real_part,isolate,*obj,"real")) return false;
+    BLASMatrix<T> imag_part;
+    if (!ObjectToBLASMatrixReal(imag_part,isolate,*obj,"imag")) return false;
+    mat = BLASMatrixInterleave<T>(real_part,imag_part);
+    return true;
   }
 
   template <class T>
-  BLASMatrix<T> ObjectToBLASMatrix(Isolate *isolate, Value* obj);
+  bool ObjectToBLASMatrix(BLASMatrix<T> &mat, Isolate *isolate, Value* obj);
 
   template <>
-  BLASMatrix<double> ObjectToBLASMatrix(Isolate *isolate, Value* obj) {
-    return ObjectToBLASMatrixReal(isolate,obj);
+  bool ObjectToBLASMatrix(BLASMatrix<double> &mat, Isolate *isolate, Value* obj) {
+    return ObjectToBLASMatrixReal(mat,isolate,obj);
   }
 
   template <>
-  BLASMatrix<Complex<double> > ObjectToBLASMatrix(Isolate *isolate, Value* obj) {
-    return ObjectToBLASMatrixComplex(isolate,obj);
+  bool ObjectToBLASMatrix(BLASMatrix<Complex<double> > &mat, Isolate *isolate, Value* obj) {
+    return ObjectToBLASMatrixComplex(mat,isolate,obj);
   }
 
   template <class T>

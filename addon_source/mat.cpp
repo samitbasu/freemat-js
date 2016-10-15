@@ -39,8 +39,10 @@ void TGEMM(const FunctionCallbackInfo<Value> &args) {
     ThrowE(isolate,"Expected three arguments to GEMM function");
     return;
   }
-  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
-  auto Bmat = ObjectToBLASMatrix<T>(isolate,*(args[1]));
+  BLASMatrix<T> Amat;
+  if (!ObjectToBLASMatrix<T>(Amat,isolate,*(args[0]))) return;
+  BLASMatrix<T> Bmat;
+  if (!ObjectToBLASMatrix<T>(Bmat,isolate,*(args[1]))) return;
   auto cb = Local<Function>::Cast(args[2]);
   BLASMatrix<T> Cmat(Amat.rows,Bmat.cols);
   if (Amat.cols != Bmat.rows) {
@@ -67,8 +69,10 @@ void TSOLVE(const FunctionCallbackInfo<Value> &args) {
     ThrowE(isolate,"Expected four arguments to DSOLVE function");
     return;
   }
-  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
-  auto Bmat = ObjectToBLASMatrix<T>(isolate,*(args[1]));
+  BLASMatrix<T> Amat;
+  if (!ObjectToBLASMatrix<T>(Amat,isolate,*(args[0]))) return;
+  BLASMatrix<T> Bmat;
+  if (!ObjectToBLASMatrix<T>(Bmat,isolate,*(args[1]))) return;
   BLASMatrix<T> Cmat(Amat.cols, Bmat.cols);
   std::function<void(std::string) > cback = [=](std::string foo) {
     Local<Function> cb = Local<Function>::Cast(args[2]);
@@ -93,7 +97,8 @@ void TTRANSPOSE(const FunctionCallbackInfo<Value> &args) {
     ThrowE(isolate,"Expected two arguments to DTRANSPOSE function");
     return;
   }
-  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
+  BLASMatrix<T> Amat;
+  if (!ObjectToBLASMatrix<T>(Amat,isolate,*(args[0]))) return;
   auto ma = Local<Function>::Cast(args[1]);
   BLASMatrix<T> Cmat(Amat.cols, Amat.rows);
   blocked_transpose(Amat.base(),Cmat.base(),Amat.rows,Amat.cols);
@@ -110,7 +115,8 @@ void THERMITIAN(const FunctionCallbackInfo<Value> &args) {
     ThrowE(isolate,"Expect two arguments to ZHERMITIAN function");
     return;
   }
-  auto Amat = ObjectToBLASMatrix<T>(isolate,*(args[0]));
+  BLASMatrix<T> Amat;
+  if (!ObjectToBLASMatrix<T>(Amat,isolate,*(args[0]))) return;
   auto ma = Local<Function>::Cast(args[1]);
   BLASMatrix<T> Cmat(Amat.cols, Amat.rows);
   blocked_hermitian(Amat.base(),Cmat.base(),Amat.rows,Amat.cols);
