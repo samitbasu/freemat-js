@@ -50,11 +50,11 @@ describe('transpose tests', function() {
     }
     it('should refuse to transpose a multidimensional array', () => {
         const C = dbl.make_array([3,4,5]);
-        assert.throws(() => {C.transpose();}, 'function throws an error');
+        assert.throws(() => {C.transpose();}, TypeError, /matrix operation is not 2D/);
     });
     it('should refuse to hermitian transpose a multidimensional array', () => {
         const C = dbl.make_array([3,4,5]);
-        assert.throws(() => {C.hermitian();}, 'function throws an error');
+        assert.throws(() => {C.hermitian();}, TypeError, /matrix operation is not 2D/);
     });
     it('should be (transpose) idempotent for real scalars', () => {
         const C = dbl.make_scalar(5);

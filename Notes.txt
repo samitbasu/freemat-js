@@ -27,5 +27,5 @@ Plus -
 Colon - 
 NCat - 
 DoubleColon - 
-Transpose - 
-Hermitian - 
+Transpose - done
+Hermitian - done

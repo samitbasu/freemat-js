@@ -10,9 +10,13 @@
 /***************************************************************************
  * Linear equation solver for real matrices
  ***************************************************************************/
-
+#ifdef __APPLE_
 #define TOCOMP(A) ((__CLPK_complex*)(A))
 #define TOCOMPZ(A) ((__CLPK_doublecomplex*)(A))
+#else
+#define TOCOMP(A) (A)
+#define TOCOMPZ(A) (A)
+#endif
 
 static inline void Tgesvx(char* FACT, char* TRANS, int * N, int * NRHS, 
                           float *A, int * LDA, float * AF, int * LDAF, 
