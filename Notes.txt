@@ -4,7 +4,7 @@ Consider slicing as an operation
 
 
 Add - done
-Multiply -  
+Multiply - done (mtimes)
 Power - 
 LeftDivide - 
 RightDivide - 

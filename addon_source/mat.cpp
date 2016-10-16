@@ -73,6 +73,10 @@ void TSOLVE(const FunctionCallbackInfo<Value> &args) {
   if (!ObjectToBLASMatrix<T>(Amat,isolate,*(args[0]))) return;
   BLASMatrix<T> Bmat;
   if (!ObjectToBLASMatrix<T>(Bmat,isolate,*(args[1]))) return;
+  if (Amat.rows != Bmat.rows) {
+    ThrowE(isolate,"Mismatch - matrices being solved are not conformant");
+    return;
+  }
   BLASMatrix<T> Cmat(Amat.cols, Bmat.cols);
   std::function<void(std::string) > cback = [=](std::string foo) {
     Local<Function> cb = Local<Function>::Cast(args[2]);

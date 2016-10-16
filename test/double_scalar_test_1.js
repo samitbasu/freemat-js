@@ -392,6 +392,11 @@ for (let mk of scalar_cases) {
                 vectest(c,d,op);
                 vectest(d,c,op);
             });
+	    it(`should refuse to apply ${op.name} with unequal sized arrays`, () => {
+		let c = tst.randMat([12,12]);
+		let d = tst.randMat([3,5]);
+		assert.throws(()=>{op.func(c,d);},TypeError,/mismatch/);
+	    });
         }
     });
 }

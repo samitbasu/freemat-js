@@ -105,6 +105,12 @@ function new_size(x,lim) {
     return ret;
 }
 
+function same_size(a,b) {
+    for (let i=0;i<Math.max(a.length,b.length);i++) {
+	if ((a[i] || 1) !== (b[i] || 1)) return false;
+    }
+    return true;
+}
 
 function allocate(len, type = Float64Array) {
     if (len < 100) {
@@ -366,6 +372,8 @@ class DoubleArray {
             op.vector_scalar_real(ret,this,other);
             return ret;
         }
+	if (!same_size(this.dims,other.dims))
+	    throw new TypeError("mismatch dimensions to operator")
         op.vector_vector_real(ret,this,other);
         return ret;
     }
@@ -395,6 +403,8 @@ class DoubleArray {
             op.vector_scalar_real(ret,this,other);
             return ret;
         }
+	if (!same_size(this.dims,other.dims))
+	    throw new TypeError("mismatch dimensions to operator")
         if (!this.is_complex && !other.is_complex) {
             op.vector_vector_real(ret,this,other);
             return ret;
@@ -431,6 +441,8 @@ class DoubleArray {
 	    op.vector_scalar_real(ret,this,other);
 	    return ret;
 	}
+	if (!same_size(this.dims,other.dims))
+	    throw new TypeError("mismatch dimensions to operator")
 	// real, real
 	if (!this.is_complex && !other.is_complex) {
 	    let ret = make_array(this.dims);
@@ -482,6 +494,20 @@ class DoubleArray {
     }
     xor(other) {
         return this.logop(other,op_xor);
+    }
+    mldivide(other) {
+	if (this.is_scalar || other.is_scalar)
+	    return this.ldivide(other);
+	if (!this.is_complex && !other.is_complex)
+	    return mat.DSOLVE(this,other,console.log,make_array);
+	return mat.ZSOLVE(this,other,console.log,make_array);
+    }
+    mrdivide(other) {
+	if (this.is_scalar || other.is_scalar)
+	    return this.rdivide(other);
+	if (!this.is_complex && !other.is_complex)
+	    return mat.DSOLVE(other.transpose(),this.transpose(),console.log,make_array).transpose();
+	return mat.ZSOLVE(other.transpose(),this.transpose(),console.log,make_array).transpose();
     }
     mtimes(other) {
         if (this.is_scalar || other.is_scalar)
@@ -782,20 +808,6 @@ module.exports.init = initialize;
 module.exports.make_scalar = make_scalar;
 module.exports.make_logical_scalar = make_logical_scalar;
 module.exports.make_array = make_array;
-
-module.exports.matmul = (a,b) => {
-    return mat.DGEMM(a,b,make_array);
-}
-
-module.exports.matsolve = (a,b) => {
-    if (!a.is_complex && !b.is_complex)
-        return mat.DSOLVE(a,b,console.log,make_array);
-    return mat.ZSOLVE(a,b,console.log,make_array);
-}
-
-module.exports.transpose = (a) => {
-    return mat.DTRANSPOSE(a,make_array);
-}
 
 module.exports.print = print;
 module.exports.is_scalar = is_scalar;
