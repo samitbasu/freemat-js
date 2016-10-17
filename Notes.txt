@@ -6,8 +6,8 @@ Consider slicing as an operation
 Add - done
 Multiply - done (mtimes)
 Power - 
-LeftDivide - 
-RightDivide - 
+LeftDivide - done
+RightDivide - done
 DotLeftDivide - done
 DotRightDivide - done
 DotMultiply - done
