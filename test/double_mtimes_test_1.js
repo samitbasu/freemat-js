@@ -56,6 +56,6 @@ describe('mtimes tests', function() {
     it(`should fail with non-2D matrices`, () => {
         const C = dbl.make_array([3,4,5]);
         const D = dbl.make_array([4,7,5]);
-        assert.throws(C.mtimes(D),TypeError,/matrix operation is not 2D/);
+        assert.throws(() => {C.mtimes(D)},TypeError,/matrix operation is not 2D/);
     });
 });

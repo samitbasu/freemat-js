@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "outDir": "./built",
+        "allowJs": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "target": "es6",
+        "module": "commonjs"
+        
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}

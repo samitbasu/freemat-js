@@ -10,7 +10,7 @@
 /***************************************************************************
  * Linear equation solver for real matrices
  ***************************************************************************/
-#ifdef __APPLE_
+#ifdef __APPLE__
 #define TOCOMP(A) ((__CLPK_complex*)(A))
 #define TOCOMPZ(A) ((__CLPK_doublecomplex*)(A))
 #else
