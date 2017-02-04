@@ -40,9 +40,9 @@ function time_it(func,limits) {
 function rep_time(func,reps) {
     let sum = 0;
     for (let ndx = 0;ndx < reps;ndx++) {
-	let t1 = tst.tic()*1000;
+	let t1 = tic()*1000;
 	func();
-	let t2 = tst.tic()*1000;
+	let t2 = tic()*1000;
 	console.log("   elapsed time: " + (t2-t1));
 	sum = sum + (t2-t1);
     }

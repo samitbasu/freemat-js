@@ -69,7 +69,31 @@ rep_time(() => {
     function addr(a,b) {
 	return (a + b);
     }
-    for (let ndx=0;ndx<A.length;ndx++) {
-	A.real[ndx] = addr(A.real[ndx],b.real);
+    f = () => {
+	for (let ndx=0;ndx<A.length;ndx++) {
+	    A.real[ndx] = addr(A.real[ndx],b.real);
+	}
+    };
+    f();
+}, reps);
+
+console.log('class overload');
+rep_time(() => {
+    class foo {
+	constructor(len) {
+	    //	  this.data = Array(len).fill(0);
+	    this.data = new Float64Array(len);
+	    this.length = len;
+	};
+	get(ndx) {
+	    return this.data[ndx];
+	}
+	set(ndx,val) {
+	    this.data[ndx] = val;
+	}
+    };
+    b = new foo(512*512*10);
+    for (let ndx=0;ndx<b.length;ndx++) {
+	b.set(ndx,b.get(ndx)+ndx);
     }
 }, reps);

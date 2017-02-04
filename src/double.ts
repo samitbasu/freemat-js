@@ -1,5 +1,5 @@
 'use strict';
-const mat = require('./build/Release/mat');
+import mat = require('../build/Release/mat');
 
 // For speed purposes (and yes, I benchmarked first)
 // it makes sense to have 6 permutations of each operator.
@@ -46,9 +46,36 @@ import op_times = require('./ops/multiply.js');
 import op_rdivide = require('./ops/rdivide.js');
 import op_ldivide = require('./ops/ldivide.js');
 
-type Scalar = DoubleScalar | ComplexScalar | LogicalScalar | number;
+// Can hold anything that returns a number on 
+// idexing
 
-type FreeMatArray = number[] | Float64Array;
+
+interface ComplexNumber {
+    real: number;
+    imag: number;
+}
+
+// This interface describes a fixed length array of numbers:
+// something like [1,2,3,4]
+interface NumericArray {
+    readonly length: number;
+    [index: number]: number;
+    reduce(callbackfn: (previousValue: number,
+        currentValue: number,
+        currentIndex: number,
+        array: NumericArray) => number,
+        initialValue?: number): number;
+    every(callbackfn: (value: number) => boolean): boolean;
+}
+
+interface ComplexArray {
+    readonly length: number;
+    readonly dims: NumericArray;
+    real: NumericArray;
+    imag: NumericArray;
+}
+
+//type Scalar = DoubleScalar | ComplexScalar | LogicalScalar | number;
 
 function isArrayLike(x: Scalar | DoubleArray | LogicalArray): x is (DoubleArray | LogicalArray) {
     return (x instanceof DoubleArray) || (x instanceof LogicalArray);
@@ -82,7 +109,7 @@ export function imag_scalar(x: DoubleArray | LogicalArray | Scalar): number {
     return x.imag;
 }
 
-function compute_ndx(dims: number[], x: FreeMatArray): number {
+function compute_ndx(dims: NumericArray, x: NumericArray): number {
     if (dims.length === x.length) {
         let ndx = 0;
         let slice_size = 1;
@@ -96,27 +123,27 @@ function compute_ndx(dims: number[], x: FreeMatArray): number {
     throw "What?";
 }
 
-function is_vector(dims: number[]): boolean {
+function is_vector(dims: NumericArray): boolean {
     const cdim = count(dims);
     return ((cdim === dims[0]) || (cdim === dims[1]));
 }
 
-function is_row_vector(dims: number[]): boolean {
+function is_row_vector(dims: NumericArray): boolean {
     return (is_vector(dims) && (dims[0] === 1));
 }
 
-function count(array: number[]): number {
+function count(array: NumericArray): number {
     return array.reduce((x, y) => x * y, 1);
 }
 
-function exceeds_limits(x: number[], lim: number[]): boolean {
+function exceeds_limits(x: NumericArray, lim: NumericArray): boolean {
     for (let i = 0; i < x.length; i++) {
         if (x[i] > (lim[i] || 1)) return true;
     }
     return false;
 }
 
-function new_size(x: number[], lim: number[]): number[] {
+function new_size(x: NumericArray, lim: NumericArray): NumericArray {
     let ret: number[];
     for (let i = 0; i < Math.max(x.length, lim.length); i++) {
         ret[i] = Math.max((x[i] || 1), (lim[i] || 1));
@@ -124,40 +151,39 @@ function new_size(x: number[], lim: number[]): number[] {
     return ret;
 }
 
-function same_size(a: number[], b: number[]): boolean {
+function same_size(a: NumericArray, b: NumericArray): boolean {
     for (let i = 0; i < Math.max(a.length, b.length); i++) {
         if ((a[i] || 1) !== (b[i] || 1)) return false;
     }
     return true;
 }
 
-//May need work...
-function allocate(len: number): FreeMatArray {
+function allocate(len: number): NumericArray {
     if (len < 100) {
         return Array(len).fill(0);
     }
     return new Float64Array(len);
 }
 
-function extend_dims(dims: number[], len: number): void {
+function extend_dims(dims: NumericArray, len: number): void {
     for (let i = dims.length; i < len; i++) dims[i] = 1;
 }
 
-function dot(x: number[], y: number[]): number {
+function dot(x: NumericArray, y: NumericArray): number {
     let accum = 0;
     for (let i = 0; i < x.length; i++)
         accum += (x[i] * y[i]);
     return accum;
 }
 
-function stride(dims: number[]): number[] {
+function stride(dims: NumericArray): NumericArray {
     let ret = [1];
     for (let i = 1; i < dims.length; i++)
         ret[i] = ret[i - 1] * dims[i - 1];
     return ret;
 }
 
-function increment_ripple(x: number[], limits: number[], dim: number): void {
+function increment_ripple(x: NumericArray, limits: NumericArray, dim: number): void {
     x[dim]++;
     for (let i = dim; i < x.length; i++) {
         if (x[i] >= limits[i]) {
@@ -168,12 +194,12 @@ function increment_ripple(x: number[], limits: number[], dim: number): void {
 }
 
 interface CopyResults {
-    dims: number[];
+    dims: NumericArray;
     capacity: number;
-    array: FreeMatArray;
+    array: NumericArray;
 }
 
-function copyLoop(orig_dims: number[], array: FreeMatArray, new_dims: number[]): CopyResults {
+function copyLoop(orig_dims: NumericArray, array: NumericArray, new_dims: NumericArray): CopyResults {
     const capacity = count(new_dims) * 2;
     let op = allocate(capacity);
     // Normalize the dimensions so that they match
@@ -204,12 +230,12 @@ type Indexable = Scalar | DoubleArray | LogicalArray;
 class LogicalArray {
     is_scalar: boolean;
     readonly is_array: boolean = true;
-    readonly is_complex: boolean = true;
+    readonly is_complex: boolean = false;
     dims: number[];
     length: number;
     capacity: number;
-    real: FreeMatArray;
-    constructor(dims: number[], real?: FreeMatArray) {
+    real: NumericArray;
+    constructor(dims: number[], real?: NumericArray) {
         this.dims = dims;
         this.length = count(dims);
         this.capacity = this.length;
@@ -235,19 +261,18 @@ class LogicalArray {
     }
 }
 
-
 // Class that uses a typed array as backing for the data
 // Useful for medium to large arrays.
-class DoubleArray {
+class DoubleArray implements ComplexArray {
     is_scalar: boolean;
     is_complex: boolean;
     readonly is_array: boolean = true;
-    dims: number[];
+    dims: NumericArray;
     length: number;
     capacity: number;
-    real: FreeMatArray;
-    imag: FreeMatArray;
-    constructor(dims: number[], real = null, imag = []) {
+    real: NumericArray;
+    imag: NumericArray;
+    constructor(dims: NumericArray, real?: NumericArray, imag?: NumericArray) {
         this.dims = dims;
         this.length = count(dims);
         this.capacity = this.length;
@@ -270,7 +295,7 @@ class DoubleArray {
         }
         throw "Error!";
     }
-    resize(new_dims: number[]): this {
+    resize(new_dims: number[]): DoubleArray {
         // Resize the array to the new dimensions.  There are several considerations:
         //  1.  If the resize is a vector one and this is a vector and the capacity
         //      is adequate, we can simply adjust the dimension
@@ -308,27 +333,27 @@ class DoubleArray {
         }
         return this;
     }
-    slice(offset, dims) {
+    slice(offset: number, dims: NumericArray): DoubleArray {
         let slice_len = count(dims);
         if (this.real instanceof Float64Array)
             return new DoubleArray(dims, new Float64Array(this.real.buffer,
                 offset * 8, slice_len));
         throw "What?";
     }
-    complexify() {
+    complexify(): this {
         if (this.is_complex) return this;
         this.imag = allocate(this.length);
         this.is_complex = true;
         return this;
     }
-    decomplexify() {
+    decomplexify(): this {
         if (!this.is_complex) return this;
         if (!this.imag.every(x => (x === 0))) return this;
         this.imag = [];
         this.is_complex = false;
         return this;
     }
-    fast_get(where) {
+    fast_get(where: number): number {
         return this.real[where || 0];
     }
     get(where) {
@@ -345,7 +370,7 @@ class DoubleArray {
         else
             return make_scalar(this.real[ndx], this.imag[ndx]);
     }
-    fast_set(a, b) {
+    fast_set(a: number, b: number): void {
         this.real[a] = b;
     }
     set(where, what) {
@@ -838,6 +863,7 @@ export function print(A) {
     }
 }
 
+
 DoubleArray.prototype.is_array = true;
 DoubleArray.prototype.is_logical = false;
 LogicalArray.prototype.is_complex = false;
@@ -848,3 +874,44 @@ Number.prototype.is_array = false;
 Number.prototype.is_logical = true;
 
 //DoubleScalar.prototype.type = module.exports;
+
+// Consider adding
+
+type Array = DoubleArray;
+
+interface Operator {
+    readonly scalar_real: (a: number, b: number) => number;
+    readonly scalar_complex: (a: ComplexScalar, b: ComplexScalar) => ComplexScalar;
+    readonly scalar_vector_real: (a: number, b: NumericArray) => NumericArray;
+    readonly vector_scalar_real: (a: NumericArray, b: number) => NumericArray;
+    readonly vector_vector_real: (a: NumericArray, b: NumericArray) => NumericArray;
+    readonly vector_vector_complex: (a: ComplexArray, b: ComplexArray) => ComplexArray;
+}
+
+function IsScalar(a: Array): boolean {
+    if (typeof (a) === 'number') return true;
+    if (a instanceof ComplexScalar) return true;
+    return a.length === 1;
+}
+
+function IsComplex(a: Array): boolean {
+    if (typeof (a) === 'number') return false;
+    if (a instanceof NumericArray) return false;
+    return true;
+}
+
+function DoBinaryOpScalarScalarComplex(a: Array, b: Array, op: Operator): Array {
+}
+
+function DoBinaryOpScalarScalar(a: Array, b: Array, op: Operator): Array {
+    if (IsComplex(a) || IsComplex(b))
+        return DoBinaryOpScalarScalarComplex(a, b);
+}
+
+function DoBinaryOp(a: Array, b: Array, op: Operator): Array {
+    if (IsScalar(a) && IsScalar(b))
+        return DoBinaryOpScalarScalar(a, b, op);
+}
+
+function Add(a: Array, b: Array): Array {
+}
