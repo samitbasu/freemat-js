@@ -15,12 +15,12 @@ namespace FM {
   using namespace v8;
 
   template <class I>
-  void ThrowE(I isolate, const char * msg) {
+  inline void ThrowE(I isolate, const char * msg) {
     isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, msg)));
   }
 
   template <class I, class O>
-  bool GetBool(I isolate, O obj, const char *name) {
+  inline bool GetBool(I isolate, O obj, const char *name) {
     auto context = isolate->GetCurrentContext();    
     auto val = obj->Get(context,String::NewFromUtf8(isolate, name)).ToLocalChecked();
     auto bval = val->ToBoolean(context).ToLocalChecked()->Value();
@@ -28,7 +28,7 @@ namespace FM {
   }
 
   template <class I, class O>
-  int GetInt(I isolate, O obj, const char *name) {
+  inline int GetInt(I isolate, O obj, const char *name) {
     auto context = isolate->GetCurrentContext();    
     auto val = obj->Get(context,String::NewFromUtf8(isolate, name)).ToLocalChecked();
     auto bval = val->ToNumber(context).ToLocalChecked()->Value();
@@ -36,7 +36,7 @@ namespace FM {
   }
 
   template <class I, class O>
-  std::vector<double> GetDoubleArray(I isolate, O obj, const char *name) {
+  inline std::vector<double> GetDoubleArray(I isolate, O obj, const char *name) {
     auto context = isolate->GetCurrentContext();
     auto val = obj->Get(context,String::NewFromUtf8(isolate, name)).ToLocalChecked();
     auto arr = val->ToObject(context).ToLocalChecked();
@@ -70,7 +70,7 @@ namespace FM {
   };
 
   template <class T>
-  BLASMatrix<Complex<T> > BLASMatrixInterleave(const BLASMatrix<T> &r, const BLASMatrix<T> &i) {
+  inline BLASMatrix<Complex<T> > BLASMatrixInterleave(const BLASMatrix<T> &r, const BLASMatrix<T> &i) {
     BLASMatrix<Complex<T> > ret(r.rows,r.cols);
     const size_t numel = r.rows*r.cols;
     Complex<T> *ptr = ret.base();
@@ -81,8 +81,8 @@ namespace FM {
     return ret;
   }
 
-  template <class T = double> 
-  bool ObjectToBLASMatrixReal(BLASMatrix<T> &mat, Isolate * isolate, Value * arg, const char *name = "real") {
+  template <class T> 
+  inline bool ObjectToBLASMatrixReal(BLASMatrix<T> &mat, Isolate * isolate, Value * arg, const char *name = "real") {
     auto context = isolate->GetCurrentContext();
     auto obj = arg->ToObject(context).ToLocalChecked();
     auto dims = GetDoubleArray(isolate,obj,"dims");
@@ -94,7 +94,7 @@ namespace FM {
     mat = BLASMatrix<T>(dims[0],dims[1]);
     auto cnt = mat.rows*mat.cols;
     auto val = obj->Get(context,String::NewFromUtf8(isolate, name)).ToLocalChecked();
-    if (val->IsFloat64Array()) {
+    if (val->IsFloat64Array() && (sizeof(T) == sizeof(double))) {
       ArrayBufferView *abv = ArrayBufferView::Cast(*val);
       abv->CopyContents(mat.base(),cnt*sizeof(double));
     } else {
@@ -106,7 +106,7 @@ namespace FM {
   }
 
   template <class T = double>
-  bool ObjectToBLASMatrixComplex(BLASMatrix<Complex<T> > &mat, Isolate * isolate, Value * arg) {
+  inline bool ObjectToBLASMatrixComplex(BLASMatrix<Complex<T> > &mat, Isolate * isolate, Value * arg) {
     auto context = isolate->GetCurrentContext();
     auto obj = arg->ToObject(context).ToLocalChecked();
     BLASMatrix<T> real_part;
@@ -118,33 +118,33 @@ namespace FM {
   }
 
   template <class T>
-  bool ObjectToBLASMatrix(BLASMatrix<T> &mat, Isolate *isolate, Value* obj);
+  inline bool ObjectToBLASMatrix(BLASMatrix<T> &mat, Isolate *isolate, Value* obj);
 
   template <>
-  bool ObjectToBLASMatrix(BLASMatrix<double> &mat, Isolate *isolate, Value* obj) {
+  inline bool ObjectToBLASMatrix(BLASMatrix<double> &mat, Isolate *isolate, Value* obj) {
     return ObjectToBLASMatrixReal(mat,isolate,obj);
   }
 
   template <>
-  bool ObjectToBLASMatrix(BLASMatrix<Complex<double> > &mat, Isolate *isolate, Value* obj) {
+  inline bool ObjectToBLASMatrix(BLASMatrix<Complex<double> > &mat, Isolate *isolate, Value* obj) {
     return ObjectToBLASMatrixComplex(mat,isolate,obj);
   }
 
   template <class T>
-  Local<Value> CArrayToTypedArray(T* p, int len, Isolate *isolate);
+  inline Local<Value> CArrayToTypedArray(T* p, int len, Isolate *isolate);
 
   template <>
-  Local<Value> CArrayToTypedArray(double *p, int len, Isolate *isolate) {
+  inline Local<Value> CArrayToTypedArray(double *p, int len, Isolate *isolate) {
     auto buff = ArrayBuffer::New(isolate, p, len*sizeof(double),
                                  ArrayBufferCreationMode::kInternalized);
     return Float64Array::New(buff,0,len);
   }
   
   template <class T>
-  Local<Value> BLASMatrixToBuffer(Isolate *isolate, BLASMatrix<T> &mat);
+  inline Local<Value> BLASMatrixToBuffer(Isolate *isolate, BLASMatrix<T> &mat);
 
   template <>
-  Local<Value> BLASMatrixToBuffer(Isolate *isolate, BLASMatrix<double> &mat) {
+  inline Local<Value> BLASMatrixToBuffer(Isolate *isolate, BLASMatrix<double> &mat) {
     size_t len = mat.elements();
     double *c = (double*) (calloc(len,sizeof(double)));
     memcpy(c,mat.base(),len*sizeof(double));
@@ -152,7 +152,7 @@ namespace FM {
   }
 
   template <class T>
-  Local<Value> BLASMatrixToBufferReal(Isolate *isolate, BLASMatrix<Complex<T> >&mat) {
+  inline Local<Value> BLASMatrixToBufferReal(Isolate *isolate, BLASMatrix<Complex<T> >&mat) {
     size_t len = mat.elements();
     T *c_r = (T*) (calloc(len,sizeof(T)));
     const auto mp = mat.base();
@@ -161,7 +161,7 @@ namespace FM {
   }
 
   template <class T>
-  Local<Value> BLASMatrixToBufferImag(Isolate *isolate, BLASMatrix<Complex<T> > &mat) {
+  inline Local<Value> BLASMatrixToBufferImag(Isolate *isolate, BLASMatrix<Complex<T> > &mat) {
     size_t len = mat.elements();
     T *c_i = (T*) (calloc(len,sizeof(T)));
     const auto mp = mat.base();
@@ -170,7 +170,7 @@ namespace FM {
   }
 
   template <class T>
-  Local<Value> MakeDimsArray(Isolate *isolate, BLASMatrix<T> &C) {
+  inline Local<Value> MakeDimsArray(Isolate *isolate, BLASMatrix<T> &C) {
     // Build an array with the row and column dimensions of the matrix
     // as entries
     auto dim = Array::New(isolate);
@@ -181,7 +181,7 @@ namespace FM {
   }
   
   template <class T>
-  Local<Value> ConstructArray(Isolate *isolate, Local<Function> cb, BLASMatrix<T> &C) {
+  inline Local<Value> ConstructArray(Isolate *isolate, Local<Function> cb, BLASMatrix<T> &C) {
     // Call the array constructor
     const unsigned argc = 2;
     Local<Value> argv[argc] = {MakeDimsArray(isolate, C),
@@ -192,7 +192,7 @@ namespace FM {
   }
 
   template <class T>
-  Local<Value> ConstructArray(Isolate *isolate, Local<Function> cb, BLASMatrix<Complex<T> >  &C) {
+  inline Local<Value> ConstructArray(Isolate *isolate, Local<Function> cb, BLASMatrix<Complex<T> >  &C) {
     const unsigned argc = 3;
     Local<Value> argv[argc] = {MakeDimsArray(isolate, C),
                                BLASMatrixToBufferReal(isolate,C),

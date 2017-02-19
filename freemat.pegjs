@@ -228,7 +228,7 @@ ForExpression = id:Identifier EQ expr:Expression {
    return {
      node: 'ForExpression',
      identifier: id,
-     exprression: expr
+     expression: expr
      }
     } / LPAR expr:ForExpression RPAR {return expr}
 

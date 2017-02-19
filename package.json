@@ -1,0 +1,38 @@
+{
+  "name": "freemat-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": ".eslintrc.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "nodemon": "^1.11.0",
+    "ts-node": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.5",
+    "nodemon": "^1.11.0",
+    "pegjs": "^0.10.0",
+    "ts-node": "^2.0.0",
+    "typescript": "^2.1.5"
+  },
+  "scripts": {
+    "start": "npm run build:live",
+    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- src/test3.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samitbasu/freemat-js.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/samitbasu/freemat-js/issues"
+  },
+  "homepage": "https://github.com/samitbasu/freemat-js#readme"
+}

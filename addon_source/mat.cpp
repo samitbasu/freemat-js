@@ -12,6 +12,10 @@
 using namespace v8;
 using namespace FM;
 
+
+// Note to self - do not add support for single precision ops.  Just do ops in double precision
+// and cast the result.  Remember that single precision is a storage technique, not for performance.
+
 void BLAS_gemm(int Arows, int Acols, int Bcols,
                 const double *A, const double *B,
                 double *C)
@@ -55,11 +59,11 @@ void TGEMM(const FunctionCallbackInfo<Value> &args) {
 }
 
 
-#define INSTANCE4(x) \
+#define INSTANCE2(x) \
   void D ## x(const FunctionCallbackInfo<Value> &args) {T ## x<double>(args);} \
   void Z ## x(const FunctionCallbackInfo<Value> &args) {T ## x<Complex<double> >(args);}
 
-INSTANCE4(GEMM)
+INSTANCE2(GEMM)
 
 template <class T>
 void TSOLVE(const FunctionCallbackInfo<Value> &args) {
@@ -89,7 +93,7 @@ void TSOLVE(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(ConstructArray(isolate,ma,Cmat));
 }
 
-INSTANCE4(SOLVE)
+INSTANCE2(SOLVE)
 
 // Should this code be auto-generated?
 
@@ -109,7 +113,7 @@ void TTRANSPOSE(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(ConstructArray(isolate,ma,Cmat));
 }
 
-INSTANCE4(TRANSPOSE)
+INSTANCE2(TRANSPOSE)
 
 template <class T>
 void THERMITIAN(const FunctionCallbackInfo<Value> &args) {
