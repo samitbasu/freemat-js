@@ -1,8 +1,10 @@
-import { FMArray, MakeComplex, FnMakeScalarComplex, FnMakeScalarReal, ComputeBinaryOpOutputDim, Elements } from './arrays';
+import { NumericArray, FMArray, MakeComplex, FnMakeScalarComplex, FnMakeScalarReal, ComputeBinaryOpOutputDim, Elements } from './arrays';
 import { Operator } from './operators';
 
 function binop_complex_scalar(a: FMArray, b: FMArray, op: Operator): FMArray {
-    return FnMakeScalarComplex(op.op_complex(a.real[0], a.imag[0], b.real[0], b.imag[0]));
+    // Type assertions added because Compiler doesn't know how we got here...
+    return FnMakeScalarComplex(op.op_complex(a.real[0], (a.imag as NumericArray)[0],
+        b.real[0], (b.imag as NumericArray)[0]));
 }
 
 function binop_complex_vector(a: FMArray, b: FMArray, op: Operator): FMArray {
@@ -12,10 +14,12 @@ function binop_complex_vector(a: FMArray, b: FMArray, op: Operator): FMArray {
     const bincr = (b.length > 1) ? 1 : 0;
     const c = MakeComplex(new FMArray(cdims));
     for (let ndx = 0; ndx < clength; ndx++) {
-        const res = op.op_complex(a.real[ndx * aincr], a.imag[ndx * aincr],
-            b.real[ndx * bincr], b.imag[ndx * bincr]);
+        const res = op.op_complex(a.real[ndx * aincr],
+            (a.imag as NumericArray)[ndx * aincr],
+            b.real[ndx * bincr],
+            (b.imag as NumericArray)[ndx * bincr]);
         c.real[ndx] = res[0];
-        c.imag[ndx] = res[1];
+        (c.imag as NumericArray)[ndx] = res[1];
     }
     return c;
 }

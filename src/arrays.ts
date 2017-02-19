@@ -39,6 +39,7 @@ function print_real(A: FMArray): string {
 }
 
 function print_complex(A: FMArray): string {
+    if (!A.imag) return print_real(A);
     let line = '';
     for (let i = 0; i < A.dims[0]; i++) {
         for (let j = 0; j < A.dims[1]; j++) {
@@ -129,7 +130,7 @@ export function ComputeBinaryOpOutputDim(a: FMArray, b: FMArray): number[] {
 export function Copy(from: FMArray, to: FMArray): void {
     for (let ndx = 0; ndx < from.length; ndx++)
         to.real[ndx] = from.real[ndx];
-    if (from.imag) {
+    if (from.imag && to.imag) {
         for (let ndx = 0; ndx < from.length; ndx++)
             to.imag[ndx] = from.imag[ndx];
     }

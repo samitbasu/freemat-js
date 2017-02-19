@@ -7,6 +7,7 @@
     "test": "test"
   },
   "dependencies": {
+    "cmake-js": "^3.4.1",
     "nodemon": "^1.11.0",
     "ts-node": "^2.0.0"
   },

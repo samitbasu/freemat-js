@@ -8,6 +8,7 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "alwaysStrict": true,
+	"strictNullChecks": true,
         "target": "es6",
         "module": "commonjs",
         "sourceMap": true

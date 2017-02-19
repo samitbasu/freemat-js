@@ -114,14 +114,14 @@ export enum SyntaxKind {
     NewlineToken
 }
 
-export interface ASTNode extends TextRange {
+export interface Node extends TextRange {
     kind: SyntaxKind;
-    parent?: ASTNode;
+    parent?: Node;
 }
 
 // A token is a leaf of the parsing tree - but we still want to
 // keep the position information for debug reasons
-export interface Token<TKind extends SyntaxKind> extends ASTNode {
+export interface Token<TKind extends SyntaxKind> extends Node {
     kind: TKind;
 }
 
@@ -185,21 +185,21 @@ export type ComparisonOperator = LessThanToken | LessEqualsToken | GreaterEquals
 export type BinaryOperator = ScalarOperator | MatrixOperator | LogicalOperator | ComparisonOperator;
 export type DeclarationTypeToken = SyntaxKind.GlobalToken | SyntaxKind.PersistentToken;
 
-export interface Statement extends ASTNode {
+export interface Statement extends Node {
 }
 
-export interface Expression extends ASTNode {
+export interface Expression extends Node {
 }
 
-export interface DereferenceExpression extends ASTNode {
+export interface DereferenceExpression extends Node {
 }
 
-export interface Blob extends ASTNode {
+export interface Blob extends Node {
     kind: SyntaxKind.Blob;
     text: string;
 }
 
-export interface SpecialFunctionCall extends ASTNode {
+export interface SpecialFunctionCall extends Node {
     kind: SyntaxKind.SpecialFunctionCall;
     args: Blob[];
 }
@@ -253,12 +253,12 @@ export interface LiteralExpression extends Expression {
 
 export interface InfixExpression extends Expression {
     kind: SyntaxKind.InfixExpression;
-    leftOperand: ASTNode;
+    leftOperand: Node;
     operator: BinaryOperator;
-    rightOperand: ASTNode;
+    rightOperand: Node;
 }
 
-export interface Block extends ASTNode {
+export interface Block extends Node {
     kind: SyntaxKind.Block;
     statements: Statement[];
 }
@@ -310,12 +310,12 @@ export interface TryStatement extends Statement {
     catc?: CatchStatement;
 }
 
-export interface Identifier extends ASTNode {
+export interface Identifier extends Node {
     kind: SyntaxKind.Identifier;
     name: string;
 }
 
-export interface ForExpression extends ASTNode {
+export interface ForExpression extends Node {
     kind: SyntaxKind.ForExpression;
     identifier: Identifier;
     expression: Expression;
@@ -355,19 +355,19 @@ export interface IfStatement extends Statement {
     els?: ElseStatement;
 }
 
-export interface PrefixExpression extends ASTNode {
+export interface PrefixExpression extends Node {
     kind: SyntaxKind.PrefixExpression;
     operator: PlusToken | MinusToken | NotToken;
     operand: Expression;
 }
 
-export interface PostfixExpression extends ASTNode {
+export interface PostfixExpression extends Node {
     kind: SyntaxKind.PostfixExpression;
     operator: TransposeToken | HermitianToken;
     operand: Expression;
 }
 
-interface InitializedExpression extends ASTNode {
+interface InitializedExpression extends Node {
     identifier: Identifier;
     init?: Expression;
 }
@@ -376,24 +376,24 @@ interface AttributeNode extends InitializedExpression {
     kind: SyntaxKind.Attribute;
 }
 
-export interface Whitespace extends ASTNode {
+export interface Whitespace extends Node {
     kind: SyntaxKind.Whitespace;
 }
 
-export interface ClassBlock extends ASTNode {
+export interface ClassBlock extends Node {
 }
 
 export interface PropertyNode extends InitializedExpression {
     kind: SyntaxKind.Property;
 }
 
-export interface ArgumentNode extends ASTNode {
+export interface ArgumentNode extends Node {
     kind: SyntaxKind.Argument;
     name: Identifier;
     reference: boolean;
 }
 
-export interface FunctionDef extends ASTNode {
+export interface FunctionDef extends Node {
     kind: SyntaxKind.FunctionDefinition;
     name: Identifier;
     returns?: Identifier[];
@@ -410,17 +410,17 @@ export interface PropertyBlock extends ClassBlock {
     properties?: PropertyNode[];
 }
 
-export interface StringLiteral extends ASTNode {
+export interface StringLiteral extends Node {
     kind: SyntaxKind.StringLiteral;
     text: string;
 }
 
-export interface NumericLiteral extends ASTNode {
+export interface NumericLiteral extends Node {
     kind: SyntaxKind.FloatLiteral;
     text: string;
 }
 
-export interface Comment extends ASTNode {
+export interface Comment extends Node {
     kind: SyntaxKind.Comment;
     text: string;
 }
@@ -431,7 +431,7 @@ export interface MethodBlock extends ClassBlock {
     methods?: MethodNode[];
 }
 
-export interface ClassDefinition extends ASTNode {
+export interface ClassDefinition extends Node {
     kind: SyntaxKind.ClassDefinition;
     attributes?: AttributeNode[];
     name: Identifier;

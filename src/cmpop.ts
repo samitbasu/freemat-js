@@ -1,4 +1,4 @@
-import { ArrayType, FMArray, MakeComplex, ComputeBinaryOpOutputDim, Elements } from './arrays';
+import { NumericArray, ArrayType, FMArray, MakeComplex, ComputeBinaryOpOutputDim, Elements } from './arrays';
 import { Comparator } from './comparators';
 
 function cmpop_complex_vector(a: FMArray, b: FMArray, op: Comparator): FMArray {
@@ -8,15 +8,16 @@ function cmpop_complex_vector(a: FMArray, b: FMArray, op: Comparator): FMArray {
     const bincr = (b.length > 1) ? 1 : 0;
     const c = new FMArray(cdims, undefined, undefined, ArrayType.Logical);
     for (let ndx = 0; ndx < clength; ndx++) {
-        c.real[ndx] = (op.op_complex(a.real[ndx * aincr], a.imag[ndx * aincr],
-            b.real[ndx * bincr], b.imag[ndx * bincr]) ? 1 : 0);
+        c.real[ndx] = (op.op_complex(a.real[ndx * aincr], (a.imag as NumericArray)[ndx * aincr],
+            b.real[ndx * bincr], (b.imag as NumericArray)[ndx * bincr]) ? 1 : 0);
     }
     return c;
 }
 
 function cmpop_complex_scalar(a: FMArray, b: FMArray, op: Comparator): FMArray {
     const c = new FMArray([1, 1], undefined, undefined, ArrayType.Logical);
-    c.real[0] = (op.op_complex(a.real[0], a.imag[0], b.real[0], b.imag[0]) ? 1 : 0);
+    c.real[0] = (op.op_complex(a.real[0], (a.imag as NumericArray)[0],
+        b.real[0], (b.imag as NumericArray)[0]) ? 1 : 0);
     return c;
 }
 

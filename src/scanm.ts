@@ -1,14 +1,10 @@
-import { Lexer } from './scanner';
-import * as AST from './ast';
+import Tokenize from './scanner';
 import { readFileSync } from 'fs';
 
 let filename = process.argv[2];
 console.log('Scanning file ', filename);
 let txt = readFileSync(filename);
-let lex = new Lexer(txt.toString());
-let more = true;
-while (more) {
-    let tok = lex.nextToken();
-    console.log(AST.SyntaxKind[tok.kind], tok);
-    more = tok.kind != AST.SyntaxKind.EndOfTextToken;
-}
+console.time('run');
+let toks = Tokenize(txt.toString());
+console.timeEnd('run');
+console.log(toks);

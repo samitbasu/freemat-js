@@ -120,12 +120,13 @@ const narrow_operators_table = new Map([
 // means pos indicates the position of the first character, and end points to the
 // first character _after_ the end of the token.
 
-export class Lexer {
+export class Scanner {
     pos: number;
     buf: string;
     buflen: number;
     consume(pos: number, test: (x: string) => boolean): number {
         if (pos >= this.buflen) return pos;
+        if (!test(this.buf.charAt(pos))) return pos;
         while ((pos < this.buflen) && test(this.buf.charAt(pos))) {
             pos = pos + 1;
         }
@@ -145,7 +146,7 @@ export class Lexer {
         this.buf = text;
         this.buflen = text.length;
     }
-    nextToken(): AST.ASTNode {
+    nextToken(): AST.Node {
         if (this.pos >= this.buflen) {
             return {
                 kind: AST.SyntaxKind.EndOfTextToken,
@@ -199,7 +200,7 @@ export class Lexer {
         // .{integer}E{sign}{integer}
         let endpos = this.consume(this.pos + 1, isdigit);
         if (this.char(endpos) === '.') endpos++;
-        endpos = this.consume(this.pos + endpos, isdigit);
+        endpos = this.consume(endpos, isdigit);
         if (isexpmark(this.char(endpos))) {
             endpos++;
             if (issign(this.char(endpos))) endpos++;
@@ -215,12 +216,12 @@ export class Lexer {
         this.pos = endpos;
         return tok;
     }
-    processIdentifier(): AST.ASTNode {
+    processIdentifier(): AST.Node {
         let endpos = this.consume(this.pos + 1, isalnum);
         const id = this.buf.substring(this.pos, endpos);
         if (reserved_table.has(id)) {
-            let tok: AST.ASTNode = {
-                kind: reserved_table.get(id),
+            let tok: AST.Node = {
+                kind: reserved_table.get(id) as AST.SyntaxKind,
                 pos: this.pos,
                 end: endpos
             }
@@ -284,4 +285,14 @@ export class Lexer {
     }
 };
 
-
+export default function Tokenize(text: string): AST.Node[] {
+    let scan = new Scanner(text);
+    let more = true;
+    let tokens: AST.Node[] = [];
+    while (more) {
+        let tok = scan.nextToken();
+        tokens.push(tok);
+        more = tok.kind != AST.SyntaxKind.EndOfTextToken;
+    }
+    return tokens;
+}
