@@ -185,7 +185,12 @@ export type ComparisonOperator = LessThanToken | LessEqualsToken | GreaterEquals
 export type BinaryOperator = ScalarOperator | MatrixOperator | LogicalOperator | ComparisonOperator;
 export type DeclarationTypeToken = SyntaxKind.GlobalToken | SyntaxKind.PersistentToken;
 
+export type UnaryOperator = SyntaxKind.UnaryMinusToken | SyntaxKind.UnaryPlusToken | SyntaxKind.NotToken;
+
+export type Singleton = SyntaxKind.ReturnStatement | SyntaxKind.BreakStatement | SyntaxKind.ContinueStatement;
+
 export interface Statement extends Node {
+    printit?: boolean
 }
 
 export interface Expression extends Node {
@@ -211,17 +216,17 @@ export interface FieldExpression extends DereferenceExpression {
 
 export interface DotFieldExpression extends DereferenceExpression {
     kind: SyntaxKind.DynamicFieldExpression;
-    identifier: Identifier;
+    expression: Expression;
 }
 
 export interface ArrayIndexExpression extends DereferenceExpression {
     kind: SyntaxKind.ArrayIndexExpression;
-    expression?: Expression;
+    expressions: Expression[];
 }
 
 export interface CellIndexExpression extends DereferenceExpression {
     kind: SyntaxKind.CellIndexExpression;
-    expression: Expression;
+    expressions: Expression[];
 }
 
 export interface VariableDereference extends Expression {
@@ -237,19 +242,21 @@ export interface AssignmentStatement extends Statement {
 }
 
 export interface MatrixDefinition extends Expression {
-    kind: SyntaxKind.MatrixDefinition;
-    expression: Expression;
+    kind: SyntaxKind.MatrixDefinition | SyntaxKind.CellDefinition;
+    expressions: Expression[][];
 }
 
-export interface CellDefinition extends Expression {
-    kind: SyntaxKind.CellDefinition;
-    expression: Expression;
-}
 
 export interface LiteralExpression extends Expression {
     kind: SyntaxKind.FloatLiteral | SyntaxKind.IntegerLiteral | SyntaxKind.StringLiteral;
     text: string;
 }
+
+export interface UnaryExpression extends Expression {
+    kind: UnaryOperator;
+    operand: Expression;
+}
+
 
 export interface InfixExpression extends Expression {
     kind: SyntaxKind.InfixExpression;
@@ -289,10 +296,6 @@ export interface SwitchStatement extends Statement {
     otherwise?: OtherwiseStatement[];
 }
 
-export interface ReturnStatement extends Statement {
-    kind: SyntaxKind.ReturnStatement;
-}
-
 export interface ThrowStatement extends Statement {
     kind: SyntaxKind.ThrowStatement;
     expression: Expression;
@@ -327,11 +330,19 @@ export interface ForStatement extends ControlStatement {
     body: Block;
 }
 
-export interface BreakStatement extends Statement {
+export interface SingletonStatement extends Statement {
+    kind: Singleton;
+}
+
+export interface ReturnStatement extends SingletonStatement {
+    kind: SyntaxKind.ReturnStatement;
+}
+
+export interface BreakStatement extends SingletonStatement {
     kind: SyntaxKind.BreakStatement;
 }
 
-export interface ContinueStatement extends Statement {
+export interface ContinueStatement extends SingletonStatement {
     kind: SyntaxKind.ContinueStatement;
 }
 

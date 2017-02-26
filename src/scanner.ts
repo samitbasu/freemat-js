@@ -61,7 +61,7 @@ const reserved_table = new Map([
     ["elseif", AST.SyntaxKind.ElseIfToken],
     ["end", AST.SyntaxKind.EndToken],
     ["for", AST.SyntaxKind.ForToken],
-    ["function", AST.SyntaxxKind.FunctionToken],
+    ["function", AST.SyntaxKind.FunctionToken],
     ["global", AST.SyntaxKind.GlobalToken],
     ["if", AST.SyntaxKind.IfToken],
     ["keyboard", AST.SyntaxKind.KeyboardToken],
