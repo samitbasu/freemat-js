@@ -182,7 +182,7 @@ export type ScalarOperator = PlusToken | MinusToken | DotTimesToken | DotLeftDiv
 export type MatrixOperator = TimesToken | LeftDivideToken | RightDivideToken | PowerToken;
 export type LogicalOperator = AndAndToken | AndToken | OrOrToken | OrToken;
 export type ComparisonOperator = LessThanToken | LessEqualsToken | GreaterEqualsToken | GreaterThanToken | EqualsEqualsToken | NotEqualsToken;
-export type BinaryOperator = ScalarOperator | MatrixOperator | LogicalOperator | ComparisonOperator;
+export type BinaryOperator = ScalarOperator | MatrixOperator | LogicalOperator | ComparisonOperator | ColonToken;
 export type DeclarationTypeToken = SyntaxKind.GlobalToken | SyntaxKind.PersistentToken;
 
 export type UnaryOperator = SyntaxKind.UnaryMinusToken | SyntaxKind.UnaryPlusToken | SyntaxKind.NotToken;
@@ -197,6 +197,7 @@ export interface Expression extends Node {
 }
 
 export interface DereferenceExpression extends Node {
+    kind: SyntaxKind.ArrayIndexExpression | SyntaxKind.CellIndexExpression | SyntaxKind.FieldExpression | SyntaxKind.DynamicFieldExpression;
 }
 
 export interface Blob extends Node {
@@ -253,16 +254,17 @@ export interface LiteralExpression extends Expression {
 }
 
 export interface UnaryExpression extends Expression {
-    kind: UnaryOperator;
+    kind: SyntaxKind.PrefixExpression;
+    operator: UnaryOperator;
     operand: Expression;
 }
 
 
 export interface InfixExpression extends Expression {
     kind: SyntaxKind.InfixExpression;
-    leftOperand: Node;
+    leftOperand: Expression;
     operator: BinaryOperator;
-    rightOperand: Node;
+    rightOperand: Expression;
 }
 
 export interface Block extends Node {
@@ -294,6 +296,11 @@ export interface SwitchStatement extends Statement {
     kind: SyntaxKind.SwitchStatement;
     cases: CaseStatement[];
     otherwise?: OtherwiseStatement[];
+}
+
+export interface ExpressionStatement extends Statement {
+    kind: SyntaxKind.ExpressionStatement;
+    expression: Expression;
 }
 
 export interface ThrowStatement extends Statement {
@@ -359,17 +366,10 @@ export interface ElseStatement extends Statement {
     body: Block;
 }
 
-export interface IfStatement extends Statement {
+export interface IfStatement extends ControlStatement {
     kind: SyntaxKind.IfStatement;
-    expression: Expression;
-    elifs?: ElseIfStatement;
+    elifs: ElseIfStatement[];
     els?: ElseStatement;
-}
-
-export interface PrefixExpression extends Node {
-    kind: SyntaxKind.PrefixExpression;
-    operator: PlusToken | MinusToken | NotToken;
-    operand: Expression;
 }
 
 export interface PostfixExpression extends Node {

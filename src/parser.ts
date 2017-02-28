@@ -82,6 +82,10 @@ export class Parser {
     isEndOfText(): boolean {
         return this.isKind(AST.SyntaxKind.EndOfTextToken);
     }
+    isStatementToken(): boolean {
+        return !(this.isEndOfText() || this.isKind(AST.SyntaxKind.EndToken) ||
+            this.isKind(AST.SyntaxKind.ElseToken) || this.isKind(AST.SyntaxKind.ElseIfToken));
+    }
     munchWhiteSpace(): void {
         while (this.isSpacing()) this.pos++;
     }
@@ -90,12 +94,12 @@ export class Parser {
         let more: boolean = true;
         while (more) {
             this.munchWhiteSpace();
-            if (!this.isEndOfText() && !this.isKind(AST.SyntaxKind.EndToken)) {
+            if (this.isStatementToken()) {
                 let statement = this.statement();
-                statement.printit = this.statementSep();
+                statement.printit = !this.statementSep();
                 statements.push(statement);
             }
-            more = !this.isEndOfText() && !this.isKind(AST.SyntaxKind.EndToken);
+            more = this.isStatementToken();
         }
         let [pos, end] = UnionPos(statements);
         let ret: AST.Block = {
@@ -138,7 +142,17 @@ export class Parser {
         if (this.isAssignment())
             return this.assignmentStatement();
         // Everything else is an expression
-        return this.expression();
+        return this.expressionStatement();
+    }
+    expressionStatement(): AST.ExpressionStatement {
+        let exp = this.expression();
+        let ret: AST.ExpressionStatement = {
+            kind: AST.SyntaxKind.ExpressionStatement,
+            expression: exp,
+            pos: exp.pos,
+            end: exp.end
+        };
+        return ret;
     }
     singletonStatement(kind: AST.Singleton): AST.SingletonStatement {
         let tok = this.token();
@@ -176,7 +190,84 @@ export class Parser {
         return false;
     }
     assignmentStatement(): AST.AssignmentStatement {
+        let lhs = this.variableDereference();
+        this.munchWhiteSpace();
         this.expect(AST.SyntaxKind.EqualsToken);
+        this.munchWhiteSpace();
+        let rhs = this.expression();
+        let ret: AST.AssignmentStatement = {
+            kind: AST.SyntaxKind.AssignmentStatement,
+            lhs: lhs,
+            expression: rhs,
+            pos: lhs.pos,
+            end: rhs.end
+        };
+        return ret;
+    }
+    whileStatement(): AST.WhileStatement {
+        let while_t = this.expect(AST.SyntaxKind.WhileToken);
+        this.munchWhiteSpace();
+        let wexpr = this.expression();
+        this.statementSep();
+        let body = this.block();
+        let end_t = this.expect(AST.SyntaxKind.EndToken);
+        let ret: AST.WhileStatement = {
+            kind: AST.SyntaxKind.WhileStatement,
+            expression: wexpr,
+            body: body,
+            pos: while_t.pos,
+            end: end_t.end
+        };
+        return ret;
+    }
+    ifStatement(): AST.IfStatement {
+        let if_t = this.expect(AST.SyntaxKind.IfToken);
+        this.munchWhiteSpace();
+        let expr = this.expression();
+        let true_block = this.block();
+        let elifs: AST.ElseIfStatement[] = [];
+        while (this.token().kind === AST.SyntaxKind.ElseIfToken) {
+            elifs.push(this.elseIfStatement());
+        }
+        let els: AST.ElseStatement | undefined;
+        if (this.token().kind === AST.SyntaxKind.ElseToken)
+            els = this.elseStatement();
+        let end_t = this.expect(AST.SyntaxKind.EndToken);
+        let ret: AST.IfStatement = {
+            kind: AST.SyntaxKind.IfStatement,
+            expression: expr,
+            body: true_block,
+            elifs: elifs,
+            els: els,
+            pos: if_t.pos,
+            end: end_t.end
+        };
+        return ret;
+    }
+    elseIfStatement(): AST.ElseIfStatement {
+        let elseif_t = this.expect(AST.SyntaxKind.ElseIfToken);
+        this.munchWhiteSpace();
+        let expr = this.expression();
+        let true_block = this.block();
+        let ret: AST.ElseIfStatement = {
+            kind: AST.SyntaxKind.ElseIfStatement,
+            expression: expr,
+            body: true_block,
+            pos: elseif_t.pos,
+            end: true_block.end
+        };
+        return ret;
+    }
+    elseStatement(): AST.ElseStatement {
+        let else_t = this.expect(AST.SyntaxKind.ElseToken);
+        let true_block = this.block();
+        let ret: AST.ElseStatement = {
+            kind: AST.SyntaxKind.ElseStatement,
+            body: true_block,
+            pos: else_t.pos,
+            end: true_block.end
+        };
+        return ret;
     }
     forStatement(): AST.ForStatement {
         let for_t = this.expect(AST.SyntaxKind.ForToken);
@@ -250,16 +341,19 @@ export class Parser {
             else
                 q = 1 + op_info.precedence;
             let t1 = this.exp(q);
-            t = <AST.InfixExpression>{
+            let root: AST.InfixExpression = {
                 kind: AST.SyntaxKind.InfixExpression,
                 leftOperand: t,
-                operator: opr_save,
-                rightOperand: t1
+                operator: opr_save as AST.BinaryOperator,
+                rightOperand: t1,
+                pos: t.pos,
+                end: t1.end
             }
+            t = root;
         }
         return t;
     }
-    variableDereference(): AST.Expression {
+    variableDereference(): AST.VariableDereference {
         let ident = this.identifier();
         let index = this.indexingExpressions();
         let ret: AST.VariableDereference = {
@@ -280,7 +374,8 @@ export class Parser {
             this.pos++;
             this.munchWhiteSpace();
             let ret: AST.UnaryExpression = {
-                kind: op.mapped_operator,
+                kind: AST.SyntaxKind.PrefixExpression,
+                operator: op.mapped_operator,
                 pos: tok.pos,
                 end: tok.end,
                 operand: this.exp(op.precedence)

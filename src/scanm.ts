@@ -1,4 +1,5 @@
 import Tokenize from './scanner';
+import Walker from './walker';
 import { Parser } from './parser';
 import { readFileSync } from 'fs';
 import { inspect } from 'util';
@@ -11,4 +12,7 @@ let toks = Tokenize(txt.toString());
 console.timeEnd('run');
 console.log(toks);
 let pars = new Parser(toks);
-console.log(inspect(pars.block(), { depth: null }));
+let blk = pars.block();
+console.log(inspect(blk, { depth: null }));
+console.log(Walker(blk));
+
