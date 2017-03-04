@@ -60,6 +60,12 @@ export class Parser {
         this.tokens = tok;
         this.pos = 0;
     }
+    consume(): AST.Node {
+        let current = this.token();
+        console.log("Consumed token: ", AST.SyntaxKind[current.kind]);
+        this.pos++;
+        return current;
+    }
     expect(kind: AST.SyntaxKind): AST.Node {
         let current = this.token();
         if (this.isKind(kind)) {
@@ -84,7 +90,8 @@ export class Parser {
     }
     isStatementToken(): boolean {
         return !(this.isEndOfText() || this.isKind(AST.SyntaxKind.EndToken) ||
-            this.isKind(AST.SyntaxKind.ElseToken) || this.isKind(AST.SyntaxKind.ElseIfToken));
+            this.isKind(AST.SyntaxKind.ElseToken) || this.isKind(AST.SyntaxKind.ElseIfToken) ||
+            this.isKind(AST.SyntaxKind.CaseToken) || this.isKind(AST.SyntaxKind.OtherwiseToken));
     }
     munchWhiteSpace(): void {
         while (this.isSpacing()) this.pos++;
@@ -144,6 +151,59 @@ export class Parser {
         // Everything else is an expression
         return this.expressionStatement();
     }
+    switchStatement(): AST.SwitchStatement {
+        let swt = this.expect(AST.SyntaxKind.SwitchToken);
+        this.munchWhiteSpace();
+        let swexpr = this.expression();
+        this.munchWhiteSpace();
+        this.statementSep();
+        let swcases: AST.CaseStatement[] = [];
+        while (this.isKind(AST.SyntaxKind.CaseToken)) {
+            swcases.push(this.caseStatement());
+        }
+        let oth: AST.OtherwiseStatement | undefined;
+        if (this.isKind(AST.SyntaxKind.OtherwiseToken))
+            oth = this.otherwiseStatement();
+        let end_t = this.expect(AST.SyntaxKind.EndToken);
+        let ret: AST.SwitchStatement = {
+            kind: AST.SyntaxKind.SwitchStatement,
+            expr: swexpr,
+            cases: swcases,
+            otherwise: oth,
+            pos: swt.pos,
+            end: end_t.end
+        };
+        return ret;
+    }
+    caseStatement(): AST.CaseStatement {
+        this.munchWhiteSpace();
+        let cse = this.expect(AST.SyntaxKind.CaseToken);
+        this.munchWhiteSpace();
+        let expr = this.expression();
+        this.statementSep();
+        let body = this.block();
+        let ret: AST.CaseStatement = {
+            kind: AST.SyntaxKind.CaseStatement,
+            expression: expr,
+            body: body,
+            pos: cse.pos,
+            end: body.end
+        };
+        return ret;
+    }
+    otherwiseStatement(): AST.OtherwiseStatement {
+        this.munchWhiteSpace();
+        let oth = this.expect(AST.SyntaxKind.OtherwiseToken);
+        this.munchWhiteSpace();
+        let body = this.block();
+        let ret: AST.OtherwiseStatement = {
+            kind: AST.SyntaxKind.OtherwiseStatement,
+            body: body,
+            pos: oth.pos,
+            end: body.end
+        };
+        return ret;
+    }
     expressionStatement(): AST.ExpressionStatement {
         let exp = this.expression();
         let ret: AST.ExpressionStatement = {
@@ -156,7 +216,7 @@ export class Parser {
     }
     singletonStatement(kind: AST.Singleton): AST.SingletonStatement {
         let tok = this.token();
-        this.pos++;
+        this.consume();
         let ret: AST.SingletonStatement = {
             kind: kind,
             pos: tok.pos,
@@ -168,13 +228,14 @@ export class Parser {
         // Scan forward until we find a semicolon, newline, unescaped comma
         let paren_depth = 0;
         let wing_depth = 0;
+        let brk_depth = 0;
         let scan = this.pos;
         while ((scan < this.tokens.length) &&
             (this.tokens[scan].kind !== AST.SyntaxKind.SemiColonToken) &&
             (this.tokens[scan].kind !== AST.SyntaxKind.Comment) &&
             (this.tokens[scan].kind !== AST.SyntaxKind.NewlineToken) &&
             (!((this.tokens[scan].kind === AST.SyntaxKind.CommaToken) &&
-                (paren_depth === 0) && (wing_depth === 0)))) {
+                (paren_depth === 0) && (wing_depth === 0) && (brk_depth === 0)))) {
             if (this.tokens[scan].kind === AST.SyntaxKind.LeftParenthesisToken)
                 paren_depth++;
             if (this.tokens[scan].kind === AST.SyntaxKind.RightParenthesisToken)
@@ -183,13 +244,42 @@ export class Parser {
                 wing_depth++;
             if (this.tokens[scan].kind === AST.SyntaxKind.RightWingToken)
                 wing_depth--;
+            if (this.tokens[scan].kind === AST.SyntaxKind.LeftBracketToken)
+                brk_depth++;
+            if (this.tokens[scan].kind === AST.SyntaxKind.RightBracketToken)
+                brk_depth--;
             if (this.tokens[scan].kind === AST.SyntaxKind.EqualsToken)
                 return true;
             scan++;
         }
         return false;
     }
-    assignmentStatement(): AST.AssignmentStatement {
+    multiassignmentStatement(): AST.MultiAssignmentStatement {
+        let lbracket = this.expect(AST.SyntaxKind.LeftBracketToken);
+        let lhs: AST.VariableDereference[] = [];
+        while (!this.isKind(AST.SyntaxKind.RightBracketToken)) {
+            lhs.push(this.variableDereference());
+            if (this.isKind(AST.SyntaxKind.CommaToken))
+                this.consume();
+        }
+        this.expect(AST.SyntaxKind.RightBracketToken);
+        this.munchWhiteSpace();
+        this.expect(AST.SyntaxKind.EqualsToken);
+        this.munchWhiteSpace();
+        let expr = this.expression();
+        let ret: AST.MultiAssignmentStatement = {
+            kind: AST.SyntaxKind.MultiAssignmentStatement,
+            lhs: lhs,
+            expression: expr,
+            pos: lbracket.pos,
+            end: expr.end
+        };
+        return ret;
+    }
+    assignmentStatement(): AST.AssignmentStatement | AST.MultiAssignmentStatement {
+        this.munchWhiteSpace();
+        if (this.isKind(AST.SyntaxKind.LeftBracketToken))
+            return this.multiassignmentStatement();
         let lhs = this.variableDereference();
         this.munchWhiteSpace();
         this.expect(AST.SyntaxKind.EqualsToken);
@@ -226,11 +316,11 @@ export class Parser {
         let expr = this.expression();
         let true_block = this.block();
         let elifs: AST.ElseIfStatement[] = [];
-        while (this.token().kind === AST.SyntaxKind.ElseIfToken) {
+        while (this.isKind(AST.SyntaxKind.ElseIfToken)) {
             elifs.push(this.elseIfStatement());
         }
         let els: AST.ElseStatement | undefined;
-        if (this.token().kind === AST.SyntaxKind.ElseToken)
+        if (this.isKind(AST.SyntaxKind.ElseToken))
             els = this.elseStatement();
         let end_t = this.expect(AST.SyntaxKind.EndToken);
         let ret: AST.IfStatement = {
@@ -308,14 +398,15 @@ export class Parser {
             this.isKind(AST.SyntaxKind.CommaToken)) {
             if (this.isKind(AST.SyntaxKind.SemiColonToken))
                 isquiet = true;
-            this.pos++;
+            this.consume();
         }
         if (this.isKind(AST.SyntaxKind.ContinueToken)) {
-            this.pos++;
+            this.consume();
             return this.statementSep();
         }
         this.munchWhiteSpace();
-        if (this.isKind(AST.SyntaxKind.Comment)) this.pos++;
+        if (this.isKind(AST.SyntaxKind.Comment))
+            this.consume();
         return isquiet;
     }
     identifier(): AST.Identifier {
@@ -333,7 +424,7 @@ export class Parser {
             let opr_save = this.token();
             let op_info: OperatorDetails =
                 operator_table.get(opr_save.kind) as OperatorDetails;
-            this.pos++;
+            this.consume();
             this.munchWhiteSpace();
             let q: number = 0;
             if (op_info.right_associative)
@@ -371,7 +462,7 @@ export class Parser {
             let op: UnaryOperatorDetails =
                 unary_table.get(this.token().kind) as UnaryOperatorDetails;
             let tok = this.token();
-            this.pos++;
+            this.consume();
             this.munchWhiteSpace();
             let ret: AST.UnaryExpression = {
                 kind: AST.SyntaxKind.PrefixExpression,
@@ -383,7 +474,7 @@ export class Parser {
             return ret;
         }
         if (this.isKind(AST.SyntaxKind.LeftParenthesisToken)) {
-            this.pos++;
+            this.expect(AST.SyntaxKind.LeftParenthesisToken);
             let ret = this.exp(0);
             this.expect(AST.SyntaxKind.RightParenthesisToken);
             return ret;
@@ -397,12 +488,13 @@ export class Parser {
         if (this.isKind(AST.SyntaxKind.FloatLiteral) ||
             this.isKind(AST.SyntaxKind.StringLiteral)) {
             let ret = this.token();
-            this.pos++;
+            this.consume();
             return ret;
         }
         if (this.isKind(AST.SyntaxKind.Identifier)) {
             return this.variableDereference();
         }
+        throw new Error("Parse error");
         return {
             kind: AST.SyntaxKind.Unknown,
             pos: 0,
@@ -428,7 +520,7 @@ export class Parser {
     dotExpression(): AST.DotFieldExpression | AST.FieldExpression {
         let dot = this.expect(AST.SyntaxKind.DotToken);
         if (this.isKind(AST.SyntaxKind.LeftParenthesisToken)) {
-            this.expect(AST.SyntaxKind.LeftParenthesisToken);
+            this.consume();
             let expression = this.expression();
             let right = this.expect(AST.SyntaxKind.RightParenthesisToken);
             let ret: AST.DotFieldExpression = {
@@ -452,8 +544,7 @@ export class Parser {
     matrixDefinition(closer: AST.SyntaxKind.RightBracketToken | AST.SyntaxKind.RightWingToken,
         kind: AST.SyntaxKind.MatrixDefinition | AST.SyntaxKind.CellDefinition):
         AST.MatrixDefinition {
-        let left = this.token();
-        this.pos++;
+        let left = this.consume();
         this.munchWhiteSpace();
         let expressions: AST.Expression[][] = [];
         while (!this.isKind(closer)) {
@@ -463,11 +554,12 @@ export class Parser {
                 !this.isKind(closer)) {
                 rowdef.push(this.expression());
                 if (this.isKind(AST.SyntaxKind.CommaToken))
-                    this.pos++;
+                    this.consume();
                 this.munchWhiteSpace();
             }
             if (this.isKind(AST.SyntaxKind.SemiColonToken) ||
-                this.isKind(AST.SyntaxKind.NewlineToken)) this.pos++;
+                this.isKind(AST.SyntaxKind.NewlineToken))
+                this.consume();
             this.munchWhiteSpace();
             expressions.push(rowdef);
         }
@@ -486,7 +578,7 @@ export class Parser {
         while (!this.isKind(AST.SyntaxKind.RightParenthesisToken)) {
             if (this.isKind(AST.SyntaxKind.ColonToken)) {
                 children.push(this.token());
-                this.pos++;
+                this.consume();
             } else {
                 children.push(this.expression());
             }
@@ -508,7 +600,7 @@ export class Parser {
         while (!this.isKind(AST.SyntaxKind.RightWingToken)) {
             if (this.isKind(AST.SyntaxKind.ColonToken)) {
                 children.push(this.token());
-                this.pos++;
+                this.consume();
             } else {
                 children.push(this.expression());
             }

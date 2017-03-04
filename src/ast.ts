@@ -236,6 +236,12 @@ export interface VariableDereference extends Expression {
     deref: DereferenceExpression[];
 }
 
+export interface MultiAssignmentStatement extends Statement {
+    kind: SyntaxKind.MultiAssignmentStatement;
+    lhs: VariableDereference[];
+    expression: Expression;
+}
+
 export interface AssignmentStatement extends Statement {
     kind: SyntaxKind.AssignmentStatement;
     lhs: VariableDereference;
@@ -294,8 +300,9 @@ export interface OtherwiseStatement extends Statement {
 
 export interface SwitchStatement extends Statement {
     kind: SyntaxKind.SwitchStatement;
+    expr: Expression;
     cases: CaseStatement[];
-    otherwise?: OtherwiseStatement[];
+    otherwise?: OtherwiseStatement;
 }
 
 export interface ExpressionStatement extends Statement {

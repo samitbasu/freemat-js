@@ -184,6 +184,28 @@ function WriteExpressionStatement(tree: AST.ExpressionStatement): string {
     return WriteExpression(tree.expression);
 }
 
+function WriteCaseStatement(tree: AST.CaseStatement): string {
+    let ret = 'case ' + WriteExpression(tree.expression) + '\n';
+    ret += WriteBlock(tree.body);
+    return ret;
+}
+
+function WriteOtherwiseStatement(tree: AST.OtherwiseStatement): string {
+    let ret = 'otherwise\n';
+    ret += WriteBlock(tree.body);
+    return ret;
+}
+
+function WriteSwitchStatement(tree: AST.SwitchStatement): string {
+    let ret = 'switch ' + WriteExpression(tree.expr) + '\n';
+    for (let cse of tree.cases) {
+        ret += WriteCaseStatement(cse as AST.CaseStatement);
+    }
+    if (tree.otherwise)
+        ret += WriteOtherwiseStatement(tree.otherwise as AST.OtherwiseStatement);
+    ret += 'end\n';
+    return ret;
+}
 
 function WriteStatement(tree: AST.Statement): string {
     let ret: string = '';
@@ -202,6 +224,9 @@ function WriteStatement(tree: AST.Statement): string {
             break;
         case AST.SyntaxKind.IfStatement:
             ret = WriteIfStatement(tree as AST.IfStatement);
+            break;
+        case AST.SyntaxKind.SwitchStatement:
+            ret = WriteSwitchStatement(tree as AST.SwitchStatement);
             break;
     }
     if (!tree.printit) ret += ';'
