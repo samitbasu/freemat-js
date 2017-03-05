@@ -317,7 +317,7 @@ export interface ThrowStatement extends Statement {
 
 export interface CatchStatement extends Statement {
     kind: SyntaxKind.CatchStatement;
-    identifier: Identifier;
+    identifier?: Identifier;
     body: Block;
 }
 

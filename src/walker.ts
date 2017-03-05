@@ -207,6 +207,23 @@ function WriteSwitchStatement(tree: AST.SwitchStatement): string {
     return ret;
 }
 
+function WriteCatchStatement(tree: AST.CatchStatement): string {
+    let ret = 'catch ';
+    if (tree.identifier)
+        ret += tree.identifier.name;
+    ret += '\n';
+    ret += WriteBlock(tree.body);
+    return ret;
+}
+
+function WriteTryStatement(tree: AST.TryStatement): string {
+    let ret = 'try\n';
+    ret += WriteBlock(tree.body);
+    if (tree.catc) ret += WriteCatchStatement(tree.catc as AST.CatchStatement);
+    ret += 'end\n';
+    return ret;
+}
+
 function WriteStatement(tree: AST.Statement): string {
     let ret: string = '';
     switch (tree.kind) {
@@ -227,6 +244,9 @@ function WriteStatement(tree: AST.Statement): string {
             break;
         case AST.SyntaxKind.SwitchStatement:
             ret = WriteSwitchStatement(tree as AST.SwitchStatement);
+            break;
+        case AST.SyntaxKind.TryStatement:
+            ret = WriteTryStatement(tree as AST.TryStatement);
             break;
     }
     if (!tree.printit) ret += ';'

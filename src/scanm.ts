@@ -11,7 +11,7 @@ console.time('run');
 let toks = Tokenize(txt.toString());
 console.timeEnd('run');
 console.log(toks);
-let pars = new Parser(toks);
+let pars = new Parser(toks, txt.toString());
 let blk = pars.block();
 console.log(inspect(blk, { depth: null }));
 console.log(Walker(blk));
