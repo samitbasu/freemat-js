@@ -162,6 +162,74 @@ export class Parser {
         // Everything else is an expression
         return this.expressionStatement();
     }
+    functionStatement(): AST.FunctionDef {
+        let func_t = this.expect(AST.SyntaxKind.FunctionToken);
+        this.munchWhiteSpace();
+        let rets = this.functionReturns(); // Includes the equals sign
+        let name = this.identifier(); // Get the function name
+        let params = this.functionParameters();
+        let body = this.block();
+        let endpos = body.end;
+        if (this.isKind(AST.SyntaxKind.EndToken)) {
+            let end_t = this.expect(AST.SyntaxKind.EndToken);
+            endpos = end_t.pos;
+        }
+        let ret: AST.FunctionDef = {
+            kind: AST.SyntaxKind.FunctionDefinition,
+            name: name,
+            returns: rets,
+            args: params,
+            body: body,
+            pos: func_t.pos,
+            end: endpos
+        }
+        return ret;
+    }
+    functionParameters(): AST.Identifier[] {
+        let params: AST.Identifier[] = [];
+        this.munchWhiteSpace();
+        if (!this.isKind(AST.SyntaxKind.LeftParenthesisToken))
+            return params;
+        this.expect(AST.SyntaxKind.LeftParenthesisToken);
+        while (!this.isKind(AST.SyntaxKind.RightParenthesisToken)) {
+            params.push(this.identifier());
+            this.munchWhiteSpace();
+            if (this.isKind(AST.SyntaxKind.CommaToken)) this.consume();
+        }
+        this.expect(AST.SyntaxKind.RightParenthesisToken);
+        return params;
+    }
+    functionReturns(): AST.Identifier[] {
+        let args: AST.Identifier[] = [];
+        if (this.isKind(AST.SyntaxKind.LeftBracketToken)) {
+            this.expect(AST.SyntaxKind.LeftBracketToken);
+            while (!this.isKind(AST.SyntaxKind.RightBracketToken)) {
+                args.push(this.identifier());
+                this.munchWhiteSpace();
+                if (this.isKind(AST.SyntaxKind.CommaToken)) this.consume();
+            }
+            this.expect(AST.SyntaxKind.RightBracketToken);
+            this.munchWhiteSpace();
+            this.expect(AST.SyntaxKind.EqualsToken);
+            this.munchWhiteSpace();
+            return args;
+        }
+        // If we have an identifier followed by an '=' then we have a single
+        // return
+        if (this.isKind(AST.SyntaxKind.Identifier)) {
+            let scan = this.pos;
+            if (this.tokens[scan].kind === AST.SyntaxKind.Whitespace) scan++;
+            if (this.tokens[scan].kind === AST.SyntaxKind.EqualsToken) {
+                this.munchWhiteSpace();
+                this.expect(AST.SyntaxKind.EqualsToken);
+                this.munchWhiteSpace();
+                args.push(this.identifier());
+                return args;
+            }
+        }
+        // No arguments
+        return args;
+    }
     tryStatement(): AST.TryStatement {
         let try_t = this.expect(AST.SyntaxKind.TryToken);
         this.statementSep();

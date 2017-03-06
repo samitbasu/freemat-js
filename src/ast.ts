@@ -414,8 +414,8 @@ export interface ArgumentNode extends Node {
 export interface FunctionDef extends Node {
     kind: SyntaxKind.FunctionDefinition;
     name: Identifier;
-    returns?: Identifier[];
-    args?: ArgumentNode[];
+    returns: Identifier[];
+    args: Identifier[];
     body: Block;
 }
 

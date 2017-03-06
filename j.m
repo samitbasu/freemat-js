@@ -1,3 +1,5 @@
+function [u,s,v] = svd(a,b,c)
+
 a = [1 2 3 +4 *8]
 
 for i=1:10

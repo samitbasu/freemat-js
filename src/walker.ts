@@ -224,11 +224,18 @@ function WriteTryStatement(tree: AST.TryStatement): string {
     return ret;
 }
 
+function WriteFunctionDefinition(tree: AST.FunctionDef) {
+    let ret = 'function ';
+}
+
 function WriteStatement(tree: AST.Statement): string {
     let ret: string = '';
     switch (tree.kind) {
         case AST.SyntaxKind.AssignmentStatement:
             ret = WriteAssignmentStatement(tree as AST.AssignmentStatement);
+            break;
+        case AST.SyntaxKind.FunctionDefinition:
+            ret = WriteFunctionDefinition(tree as AST.FunctionDef);
             break;
         case AST.SyntaxKind.ForStatement:
             ret = WriteForStatement(tree as AST.ForStatement);
