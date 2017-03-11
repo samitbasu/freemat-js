@@ -124,6 +124,12 @@ class DotMWalker {
                 throw new Error('unexpected expression type ' + inspect(tree));
         }
     }
+    writeMultiAssignmentStatement(tree: AST.MultiAssignmentStatement): string {
+        let ret = '[' + tree.lhs.map((x) => this.writeVariableDereference(x)).join(',') + ']';
+        ret += ' = ';
+        ret += this.writeExpression(tree.expression);
+        return ret;
+    }
     writeAssignmentStatement(tree: AST.AssignmentStatement): string {
         let ret = this.writeVariableDereference(tree.lhs);
         ret += ' = ';
@@ -224,6 +230,9 @@ class DotMWalker {
         switch (tree.kind) {
             case AST.SyntaxKind.AssignmentStatement:
                 ret = this.writeAssignmentStatement(tree as AST.AssignmentStatement);
+                break;
+            case AST.SyntaxKind.MultiAssignmentStatement:
+                ret = this.writeMultiAssignmentStatement(tree as AST.MultiAssignmentStatement);
                 break;
             case AST.SyntaxKind.FunctionDefinition:
                 ret = this.writeFunctionDefinition(tree as AST.FunctionDef);

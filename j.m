@@ -27,6 +27,8 @@ end
     
     b = [1,2,3,4;5,6,7,8];
     [u,s,v] = svd(b);
+
+    grid on;
 end
 
 

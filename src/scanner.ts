@@ -69,7 +69,6 @@ const reserved_table = new Map([
     ["persistent", AST.SyntaxKind.PersistentToken],
     ["return", AST.SyntaxKind.ReturnToken],
     ["switch", AST.SyntaxKind.SwitchToken],
-    ["throw", AST.SyntaxKind.ThrowToken],
     ["try", AST.SyntaxKind.TryToken],
     ["while", AST.SyntaxKind.WhileToken],
 ]);

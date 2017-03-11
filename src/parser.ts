@@ -1,5 +1,10 @@
 import * as AST from './ast';
 
+//Daniel Shub replied on May 24th, 2013 12:45 pm UTC : 2 of 4
+//I avoid the command syntax religiously in my functions. From the command line sometimes I use the command line version of functions like edit, doc, clear for convenience. I would gladly give up the command line version if MATLAB would treat the oddly spaced x ==0, the same as x==0, x == 0, and the oddly spaced x== 0. Programming languages, especially ones that allow you to generally use whitespace freely, should not have crazy whitespace dependencies.
+//
+//You mentioned overhead of the parenthesis and comma separators. Is the commandline interface faster? I would have thought it would have been slower.
+//
 // Compute the union of the tokens 
 function UnionPos(toks: AST.Node[]): [number, number] {
     if (toks.length === 0) return [0, 0];
@@ -143,8 +148,6 @@ export class Parser {
             return this.switchStatement();
         if (this.isKind(AST.SyntaxKind.TryToken))
             return this.tryStatement();
-        if (this.isKind(AST.SyntaxKind.ThrowToken))
-            return this.throwStatement();
         if (this.isKind(AST.SyntaxKind.ReturnToken))
             return this.singletonStatement(AST.SyntaxKind.ReturnStatement);
         if (this.isKind(AST.SyntaxKind.GlobalToken) ||
