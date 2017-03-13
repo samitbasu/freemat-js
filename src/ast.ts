@@ -17,7 +17,7 @@ export enum SyntaxKind {
     ExpressionStatement = 10,
     ClassDefinition = 11,
     FunctionDefinition = 13,
-    SpecialFunctionCall = 14,
+    CommandStatement = 14,
     MultiAssignmentStatement = 15,
     DeclarationStatement = 16,
     AssignmentStatement = 17,
@@ -205,8 +205,9 @@ export interface Blob extends Node {
     text: string;
 }
 
-export interface SpecialFunctionCall extends Node {
-    kind: SyntaxKind.SpecialFunctionCall;
+export interface CommandStatement extends Node {
+    kind: SyntaxKind.CommandStatement;
+    func: Identifier;
     args: Blob[];
 }
 

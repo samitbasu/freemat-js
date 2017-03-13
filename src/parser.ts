@@ -67,6 +67,16 @@ export class Parser {
         this.txt = txt;
         this.pos = 0;
     }
+    mergeBlob(x: AST.Blob, y: AST.Node): AST.Blob {
+        if (x.text === '') {
+            x.pos = y.pos;
+            x.end = y.end;
+        } else {
+            x.end = y.end;
+        }
+        x.text += this.txt.substr(y.pos, y.end - y.pos + 1);
+        return x;
+    }
     consume(): AST.Node {
         let current = this.token();
         console.log("Consumed token: ", AST.SyntaxKind[current.kind]);
@@ -162,7 +172,14 @@ export class Parser {
         // the key to it being an expression statement is the absence of an '=' token
         if (this.isAssignment())
             return this.assignmentStatement();
-        // Everything else is an expression
+        // It could be a command-syntax function invocation
+        // This is identified (ideally) by a sequence of identifiers
+        // separated by whitespace (think "hold on").  However to
+        // handle things like "ls -lrt", it has to look for a whitespace
+        // followed by something other than an operator + whitespace combo
+        // (which is handled as an expression)
+        if (this.isCommand())
+            return this.commandStatement();
         return this.expressionStatement();
     }
     functionStatement(): AST.FunctionDef {
@@ -340,6 +357,22 @@ export class Parser {
         };
         return ret;
     }
+    // TODO - need to refine these rules
+    isCommand(): boolean {
+        if (!this.isKind(AST.SyntaxKind.Identifier))
+            return false;
+        let scan = this.pos + 1;
+        if (this.tokens[scan].kind !== AST.SyntaxKind.Whitespace)
+            return false;
+        scan++;
+        if (this.tokens[scan].kind === AST.SyntaxKind.LeftParenthesisToken)
+            return false;
+        if (operator_table.has(this.tokens[scan].kind)) {
+            if (this.tokens[scan + 1].kind === AST.SyntaxKind.Whitespace)
+                return false; // ident_op_ is not candidate for command
+        }
+        return true;
+    }
     isAssignment(): boolean {
         // Scan forward until we find a semicolon, newline, unescaped comma
         let paren_depth = 0;
@@ -369,6 +402,67 @@ export class Parser {
             scan++;
         }
         return false;
+    }
+    commandStatement(): AST.CommandStatement {
+        let func = this.identifier(); // Get the function name
+        // Scan forward until we find an unescaped comma or comment or
+        // semicolon
+        // FIXME - need to clean this up
+        let brk_depth = 0;
+        let wing_depth = 0;
+        let paren_depth = 0;
+        let scan = this.pos;
+        while ((scan < this.tokens.length) &&
+            (this.tokens[scan].kind !== AST.SyntaxKind.SemiColonToken) &&
+            (this.tokens[scan].kind !== AST.SyntaxKind.Comment) &&
+            (this.tokens[scan].kind !== AST.SyntaxKind.NewlineToken) &&
+            (!((this.tokens[scan].kind === AST.SyntaxKind.CommaToken) &&
+                (paren_depth === 0) && (wing_depth === 0) && (brk_depth === 0)))) {
+            if (this.tokens[scan].kind === AST.SyntaxKind.LeftParenthesisToken)
+                paren_depth++;
+            if (this.tokens[scan].kind === AST.SyntaxKind.RightParenthesisToken)
+                paren_depth--;
+            if (this.tokens[scan].kind === AST.SyntaxKind.LeftWingToken)
+                wing_depth++;
+            if (this.tokens[scan].kind === AST.SyntaxKind.RightWingToken)
+                wing_depth--;
+            if (this.tokens[scan].kind === AST.SyntaxKind.LeftBracketToken)
+                brk_depth++;
+            if (this.tokens[scan].kind === AST.SyntaxKind.RightBracketToken)
+                brk_depth--;
+            scan++;
+        }
+        // scan points to the end of the statement.
+        // Pass through all the pieces and convert to strings
+        let args: AST.Blob[] = [];
+        let i = this.pos;
+        let blob: AST.Blob = {
+            kind: AST.SyntaxKind.Blob,
+            text: '',
+            pos: 0,
+            end: 0
+        }
+        while (i < scan) {
+            let token = this.tokens[i];
+            if (token.kind !== AST.SyntaxKind.Whitespace) {
+                blob = this.mergeBlob(blob, token);
+            } else {
+                args.push(blob);
+                blob.text = '';
+            }
+            i++;
+        }
+        if (blob.text !== '') args.push(blob);
+        this.pos = scan;
+        console.log(args);
+        let ret: AST.CommandStatement = {
+            kind: AST.SyntaxKind.CommandStatement,
+            func: func,
+            args: args,
+            pos: func.pos,
+            end: args[args.length - 1].end
+        }
+        return ret;
     }
     multiassignmentStatement(): AST.MultiAssignmentStatement {
         let lbracket = this.expect(AST.SyntaxKind.LeftBracketToken);

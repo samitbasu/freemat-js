@@ -225,6 +225,15 @@ class DotMWalker {
         ret += this.pad() + 'end\n';
         return ret;
     }
+    writeCommandStatement(tree: AST.CommandStatement): string {
+        let ret: string = 'command ';
+        ret += tree.func.name + '(';
+        for (let blob of tree.args) {
+            ret += "'" + blob.text + "',"
+        }
+        ret += ')';
+        return ret;
+    }
     writeStatement(tree: AST.Statement): string {
         let ret: string = '';
         switch (tree.kind) {
@@ -254,6 +263,9 @@ class DotMWalker {
                 break;
             case AST.SyntaxKind.TryStatement:
                 ret = this.writeTryStatement(tree as AST.TryStatement);
+                break;
+            case AST.SyntaxKind.CommandStatement:
+                ret = this.writeCommandStatement(tree as AST.CommandStatement);
                 break;
         }
         if (!tree.printit) ret += ';'
