@@ -1,0 +1,10 @@
+//  Look at the logic around white space -
+// Inside a bracket expression
+// We change the rules to maximize the chance of correct parsing.
+// Binary operators that can only be binary operators swallow whitespace
+// on both sides.
+// Operators that could be unary or binary ("+" and "-") first try the
+// unary operators, and then the binary ones.
+// So first, we need to know if we are inside a comma delimited square
+// bracket expression
+

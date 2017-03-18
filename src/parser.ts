@@ -74,7 +74,7 @@ export class Parser {
         } else {
             x.end = y.end;
         }
-        x.text += this.txt.substr(y.pos, y.end - y.pos + 1);
+        x.text += this.txt.substr(y.pos, y.end - y.pos);
         return x;
     }
     consume(): AST.Node {
@@ -448,7 +448,12 @@ export class Parser {
                 blob = this.mergeBlob(blob, token);
             } else {
                 args.push(blob);
-                blob.text = '';
+                blob = {
+                    kind: AST.SyntaxKind.Blob,
+                    text: '',
+                    pos: 0,
+                    end: 0
+                }
             }
             i++;
         }
