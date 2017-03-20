@@ -279,7 +279,7 @@ export interface Block extends Node {
     statements: Statement[];
 }
 
-interface ControlStatement extends Statement {
+export interface ControlStatement extends Statement {
     expression: Expression;
     body: Block;
 }
@@ -386,12 +386,12 @@ export interface PostfixExpression extends Node {
     operand: Expression;
 }
 
-interface InitializedExpression extends Node {
+export interface InitializedExpression extends Node {
     identifier: Identifier;
     init?: Expression;
 }
 
-interface AttributeNode extends InitializedExpression {
+export interface AttributeNode extends InitializedExpression {
     kind: SyntaxKind.Attribute;
 }
 

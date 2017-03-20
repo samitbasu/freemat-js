@@ -13,15 +13,19 @@
   },
   "devDependencies": {
     "@types/node": "^7.0.5",
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "mocha-typescript": "^1.0.23",
     "nodemon": "^1.11.0",
     "pegjs": "^0.10.0",
     "ts-node": "^2.0.0",
-    "typescript": "^2.1.5"
+    "typescript": "^2.2.1"
   },
   "scripts": {
     "start": "npm run build:live",
     "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- src/test3.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev-test-watch": "mocha-typescript-watch",
+    "test": "tsc -p . && mocha built/test.js",
     "install": "node-gyp rebuild"
   },
   "repository": {

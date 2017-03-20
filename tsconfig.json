@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "outDir": "./built",
-        "allowJs": true,
         "noImplicitAny": true,
         "noImplicitThis": true,
         "noImplicitReturns": true,
@@ -11,6 +10,10 @@
 	"strictNullChecks": true,
         "target": "es6",
         "module": "commonjs",
+	"removeComments": false,
+	"preserveConstEnums": true,
+	"experimentalDecorators": true,
+	"declaration": true,
         "sourceMap": true
     },
     "include": [

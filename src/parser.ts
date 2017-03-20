@@ -79,7 +79,7 @@ export class Parser {
     }
     consume(): AST.Node {
         let current = this.token();
-        console.log("Consumed token: ", AST.SyntaxKind[current.kind]);
+        //        console.log("Consumed token: ", AST.SyntaxKind[current.kind]);
         this.pos++;
         return current;
     }
@@ -91,7 +91,7 @@ export class Parser {
             let msg: string = `Parse error: expecting ${AST.SyntaxKind[kind]} at position ${current.pos}, and got ${AST.SyntaxKind[current.kind]} instead`;
             throw new Error(msg);
         }
-        console.log("Consumed token: ", AST.SyntaxKind[kind]);
+        //        console.log("Consumed token: ", AST.SyntaxKind[kind]);
         return current;
     }
     isKind(kind: AST.SyntaxKind): boolean {
@@ -160,13 +160,16 @@ export class Parser {
             return this.tryStatement();
         if (this.isKind(AST.SyntaxKind.ReturnToken))
             return this.singletonStatement(AST.SyntaxKind.ReturnStatement);
-        if (this.isKind(AST.SyntaxKind.GlobalToken) ||
-            this.isKind(AST.SyntaxKind.PersistentToken))
-            return this.declarationStatement();
+        /*        if (this.isKind(AST.SyntaxKind.GlobalToken) ||
+                    this.isKind(AST.SyntaxKind.PersistentToken))
+                    return this.declarationStatement();
+        */
         if (this.isKind(AST.SyntaxKind.FunctionToken))
             return this.functionStatement();
+	/*
         if (this.isKind(AST.SyntaxKind.ClassDefToken))
             return this.classDefStatement();
+*/
         // All of the remaining are speculative parses - it could be an assignment (a = 1)
         // multi-assignment ([a,b] = 3), or an expression statement.
         // the key to it being an expression statement is the absence of an '=' token
@@ -734,6 +737,7 @@ export class Parser {
             } else {
                 deref = false;
             }
+            this.munchWhiteSpace();
         }
         return exprs;
     }
@@ -837,3 +841,4 @@ export class Parser {
         return ret;
     }
 }
+
