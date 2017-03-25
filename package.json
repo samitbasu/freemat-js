@@ -25,8 +25,8 @@
     "start": "npm run build:live",
     "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- src/test3.ts",
     "dev-test-watch": "mocha-typescript-watch",
-    "test": "tsc -p . && mocha built/test.js",
-    "install": "node-gyp rebuild"
+    "test": "tsc -p . && mocha built/tests",
+    "install": "cmake-js rebuild"
   },
   "repository": {
     "type": "git",

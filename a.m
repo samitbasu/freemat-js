@@ -1,4 +1,6 @@
 hold on
+[1 2 3]
+
 grid -ls
 ls ./d 124
 grid on, hold off

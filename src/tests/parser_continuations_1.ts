@@ -23,4 +23,14 @@ export class Continuations {
             assert.deepEqual(parse1, parse2);
         };
     }
+    @test("should parse statements with continuations and injected comments")
+    continuation_and_comment() {
+        for (let testcase of this.continuation_cases) {
+            const expr_no_cont = testcase.replace(/X/g, '');
+            const expr_w_cont_comment = testcase.replace(/X/g, '... % injected continuation\n');
+            const parse1 = parse(expr_no_cont);
+            const parse2 = parse(expr_w_cont_comment);
+            assert.deepEqual(parse1, parse2);
+        }
+    }
 }

@@ -287,7 +287,7 @@ export interface ControlStatement extends Statement {
 export interface DeclarationStatement extends Statement {
     kind: SyntaxKind.DeclarationStatement;
     scope: DeclarationTypeToken;
-
+    vars: InitializedExpression[];
 }
 
 export interface CaseStatement extends ControlStatement {
