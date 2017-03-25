@@ -787,7 +787,7 @@ export class Parser {
             this.munchWhiteSpace();
             expressions.push(rowdef);
         }
-        let right = this.expect(AST.SyntaxKind.RightBracketToken);
+        let right = this.expect(closer);
         let ret: AST.MatrixDefinition = {
             kind: kind,
             expressions: expressions,

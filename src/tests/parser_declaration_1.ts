@@ -28,7 +28,6 @@ export class Declarations {
             assert.equal(f.vars[0].identifier.name, 'A');
         }
     }
-
     @test("should parse a declaration with multiple variables")
     multiple_case() {
         for (let decl_type of this.decl_types) {
