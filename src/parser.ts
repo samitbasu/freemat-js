@@ -594,10 +594,20 @@ export class Parser {
         return ret;
     }
     forExpression(): AST.ForExpression {
+        let paren_block = false;
+        if (this.isKind(AST.SyntaxKind.LeftParenthesisToken)) {
+            this.expect(AST.SyntaxKind.LeftParenthesisToken);
+            paren_block = true;
+            this.munchWhiteSpace();
+        }
         let id = this.identifier();
         this.munchWhiteSpace();
         this.expect(AST.SyntaxKind.EqualsToken);
         let expr = this.expression();
+        if (paren_block) {
+            this.munchWhiteSpace();
+            this.expect(AST.SyntaxKind.RightParenthesisToken);
+        }
         let ret: AST.ForExpression = {
             kind: AST.SyntaxKind.ForExpression,
             identifier: id,
