@@ -2,8 +2,6 @@ import { suite, test } from "mocha-typescript";
 import * as AST from "../ast";
 import { parse, assertCast } from "./test_utils";
 
-const assert = require('chai').assert;
-
 const assignment_tests = ['c = \'hello\'\n',
     'c = \'hello\' \n',
     'c = \'hello\'% comment\n',

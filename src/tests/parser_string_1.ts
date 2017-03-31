@@ -13,8 +13,8 @@ function validate_assignment(y: AST.Node): AST.AssignmentStatement {
 }
 
 @suite("parser string constants")
-class ParserString {
-    const test_strings = ['', 'hello', ' world ', 'foo bar', 'with "s inside" it', 'with \'\'\' inside'];
+export class ParserString {
+    test_strings = ['', 'hello', ' world ', 'foo bar', 'with "s inside" it', 'with \'\'\' inside'];
 
     @test("should handle string literals")
     string_literals() {
