@@ -11,6 +11,7 @@ export function assertCast<T extends AST.Node>(f: AST.Node, k: AST.SyntaxKind): 
 
 export function parse(txt: string): AST.Block {
     let toks = Tokenize(txt);
+    console.log(toks);
     let pars = new Parser(toks, txt);
     return pars.block();
 }

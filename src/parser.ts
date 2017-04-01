@@ -95,7 +95,9 @@ export class Parser {
         return current;
     }
     isKind(kind: AST.SyntaxKind): boolean {
-        return this.token().kind === kind;
+        if (this.pos < this.tokens.length)
+            return this.token().kind === kind;
+        return false;
     }
     token(): AST.Node {
         return this.tokens[this.pos];
@@ -130,9 +132,12 @@ export class Parser {
             if (this.isStatementToken()) {
                 let statement = this.statement();
                 statement.printit = !this.statementSep();
+                //                console.log("statement:", statement);
                 statements.push(statement);
             }
             more = this.isStatementToken();
+            //            console.log("this token:", this.token());
+            //            console.log("more:", more);
         }
         let [pos, end] = UnionPos(statements);
         let ret: AST.Block = {
@@ -181,6 +186,7 @@ export class Parser {
         // handle things like "ls -lrt", it has to look for a whitespace
         // followed by something other than an operator + whitespace combo
         // (which is handled as an expression)
+        //        console.log("iscommand: ", this.isCommand(), " txt: ", this.txt);
         if (this.isCommand())
             return this.commandStatement();
         return this.expressionStatement();
@@ -461,8 +467,8 @@ export class Parser {
             i++;
         }
         if (blob.text !== '') args.push(blob);
-        this.pos = scan;
-        console.log(args);
+        this.pos = scan - 1;
+        //        console.log(args);
         let ret: AST.CommandStatement = {
             kind: AST.SyntaxKind.CommandStatement,
             func: func,

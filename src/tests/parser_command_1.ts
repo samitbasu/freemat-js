@@ -1,7 +1,7 @@
 import { suite, test } from "mocha-typescript";
 import * as AST from "../ast";
 import { parse, assertCast } from "./test_utils";
-
+import { inspect } from "util";
 const assert = require('chai').assert;
 
 function validate_command(y: AST.Node): AST.CommandStatement {
@@ -23,8 +23,8 @@ export class CommandStatement {
         const h = validate_command(y);
         assert.equal(h.func.name, 'foo');
         assert.equal(h.args.length, 2);
-        assert.equal(h.args[0], 'on');
-        assert.equal(h.args[1], '32');
+        assert.equal(h.args[0].text, 'on');
+        assert.equal(h.args[1].text, '32');
     }
 
     @test("should parse command statement: foo on 32 --help")
@@ -33,9 +33,9 @@ export class CommandStatement {
         const h = validate_command(y);
         assert.equal(h.func.name, 'foo');
         assert.equal(h.args.length, 3);
-        assert.equal(h.args[0], 'on');
-        assert.equal(h.args[1], '32');
-        assert.equal(h.args[2], '--help');
+        assert.equal(h.args[0].text, 'on');
+        assert.equal(h.args[1].text, '32');
+        assert.equal(h.args[2].text, '--help');
     }
 
     @test("should parse command statement: foo (op)x")
@@ -44,9 +44,10 @@ export class CommandStatement {
             const expr = `foo ${op}x bar\n`;
             console.log("      -> ", expr);
             const y = parse(expr);
+            console.log(inspect(y, { depth: 100 }))
             const h = validate_command(y);
             assert.equal(h.func.name, 'foo');
-            assert.equal(h.args.length, 2);
+            assert.equal(h.args.length, 1);
         }
     }
 
