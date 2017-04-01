@@ -285,7 +285,7 @@ class DotMWalker {
     }
 }
 
-export default function MWriter(tree: AST.Node): string {
+export function MWriter(tree: AST.Node): string {
     if (tree.kind === AST.SyntaxKind.Block) {
         let p = new DotMWalker;
         return p.writeBlock(tree as AST.Block);

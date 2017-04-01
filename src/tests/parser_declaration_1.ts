@@ -25,7 +25,7 @@ export class Declarations {
             const f = validate_declaration(y);
             assert.equal(f.scope, decl_type.kind);
             assert.equal(f.vars.length, 1);
-            assert.equal(f.vars[0].identifier.name, 'A');
+            assert.equal(f.vars[0].name, 'A');
         }
     }
     @test("should parse a declaration with multiple variables")
@@ -37,9 +37,9 @@ export class Declarations {
             const f = validate_declaration(y);
             assert.equal(f.scope, decl_type.kind);
             assert.equal(f.vars.length, 3);
-            assert.equal(f.vars[0].identifier.name, 'A');
-            assert.equal(f.vars[1].identifier.name, 'B');
-            assert.equal(f.vars[2].identifier.name, 'C');
+            assert.equal(f.vars[0].name, 'A');
+            assert.equal(f.vars[1].name, 'B');
+            assert.equal(f.vars[2].name, 'C');
         }
     }
 }

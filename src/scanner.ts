@@ -279,7 +279,7 @@ export class Scanner {
             pos: this.pos,
             end: end_index
         };
-        this.pos = end_index;
+        this.pos = end_index + 1;
         return tok;
     }
 };
@@ -293,6 +293,5 @@ export default function Tokenize(text: string): AST.Node[] {
         tokens.push(tok);
         more = tok.kind != AST.SyntaxKind.EndOfTextToken;
     }
-    console.log(tokens);
     return tokens;
 }

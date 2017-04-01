@@ -149,6 +149,9 @@ export class Parser {
         return ret;
     }
     statement(): AST.Statement {
+        if (this.isKind(AST.SyntaxKind.CommaToken) ||
+            this.isKind(AST.SyntaxKind.SemiColonToken))
+            return this.emptyStatement();
         if (this.isKind(AST.SyntaxKind.ForToken))
             return this.forStatement();
         if (this.isKind(AST.SyntaxKind.BreakToken))
@@ -165,10 +168,9 @@ export class Parser {
             return this.tryStatement();
         if (this.isKind(AST.SyntaxKind.ReturnToken))
             return this.singletonStatement(AST.SyntaxKind.ReturnStatement);
-        /*        if (this.isKind(AST.SyntaxKind.GlobalToken) ||
-                    this.isKind(AST.SyntaxKind.PersistentToken))
-                    return this.declarationStatement();
-        */
+        if (this.isKind(AST.SyntaxKind.GlobalToken) ||
+            this.isKind(AST.SyntaxKind.PersistentToken))
+            return this.declarationStatement();
         if (this.isKind(AST.SyntaxKind.FunctionToken))
             return this.functionStatement();
 	/*
@@ -364,6 +366,30 @@ export class Parser {
             kind: kind,
             pos: tok.pos,
             end: tok.end
+        };
+        return ret;
+    }
+    declarationStatement(): AST.DeclarationStatement {
+        let scope: AST.DeclarationTypeToken;
+        let begin = this.pos;
+        if (this.isKind(AST.SyntaxKind.GlobalToken) ||
+            this.isKind(AST.SyntaxKind.PersistentToken))
+            scope = this.token().kind as AST.DeclarationTypeToken;
+        else
+            throw new Error("Parse error")
+        this.pos++;
+        this.munchWhiteSpace();
+        let vars: AST.Identifier[] = [];
+        while (this.isKind(AST.SyntaxKind.Identifier)) {
+            vars.push(this.identifier());
+            this.munchWhiteSpace();
+        }
+        let ret: AST.DeclarationStatement = {
+            kind: AST.SyntaxKind.DeclarationStatement,
+            scope: scope,
+            vars: vars,
+            pos: begin,
+            end: this.pos
         };
         return ret;
     }
@@ -585,6 +611,14 @@ export class Parser {
         };
         return ret;
     }
+    emptyStatement(): AST.EmptyStatement {
+        let ret: AST.EmptyStatement = {
+            kind: AST.SyntaxKind.EmptyStatementToken,
+            pos: this.token().pos,
+            end: this.token().pos
+        };
+        return ret;
+    }
     forStatement(): AST.ForStatement {
         let for_t = this.expect(AST.SyntaxKind.ForToken);
         this.munchWhiteSpace();
@@ -740,6 +774,10 @@ export class Parser {
         if (this.isKind(AST.SyntaxKind.Identifier)) {
             return this.variableDereference();
         }
+        console.log(this.tokens);
+        console.log("current:", this.pos);
+        console.log("token:", this.tokens[this.pos]);
+        console.log("kind:", AST.SyntaxKind[this.tokens[this.pos].kind]);
         throw new Error("Parse error");
     }
     indexingExpressions(): AST.DereferenceExpression[] {

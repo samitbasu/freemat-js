@@ -111,7 +111,8 @@ export enum SyntaxKind {
     WhileToken,
     SemiColonToken,
     CommaToken,
-    NewlineToken
+    NewlineToken,
+    EmptyStatementToken
 }
 
 export interface Node extends TextRange {
@@ -205,6 +206,10 @@ export interface Blob extends Node {
     text: string;
 }
 
+export interface EmptyStatement extends Statement {
+    kind: SyntaxKind.EmptyStatementToken;
+}
+
 export interface CommandStatement extends Node {
     kind: SyntaxKind.CommandStatement;
     func: Identifier;
@@ -287,7 +292,7 @@ export interface ControlStatement extends Statement {
 export interface DeclarationStatement extends Statement {
     kind: SyntaxKind.DeclarationStatement;
     scope: DeclarationTypeToken;
-    vars: InitializedExpression[];
+    vars: Identifier[];
 }
 
 export interface CaseStatement extends ControlStatement {
