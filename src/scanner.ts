@@ -293,5 +293,6 @@ export default function Tokenize(text: string): AST.Node[] {
         tokens.push(tok);
         more = tok.kind != AST.SyntaxKind.EndOfTextToken;
     }
+    console.log(tokens);
     return tokens;
 }

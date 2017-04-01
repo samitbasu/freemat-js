@@ -246,13 +246,14 @@ export class Parser {
         // If we have an identifier followed by an '=' then we have a single
         // return
         if (this.isKind(AST.SyntaxKind.Identifier)) {
-            let scan = this.pos;
+            let scan = this.pos + 1;
             if (this.tokens[scan].kind === AST.SyntaxKind.Whitespace) scan++;
             if (this.tokens[scan].kind === AST.SyntaxKind.EqualsToken) {
+                const id = this.identifier();
                 this.munchWhiteSpace();
                 this.expect(AST.SyntaxKind.EqualsToken);
                 this.munchWhiteSpace();
-                args.push(this.identifier());
+                args.push(id);
                 return args;
             }
         }
@@ -392,6 +393,7 @@ export class Parser {
             (this.tokens[scan].kind !== AST.SyntaxKind.SemiColonToken) &&
             (this.tokens[scan].kind !== AST.SyntaxKind.Comment) &&
             (this.tokens[scan].kind !== AST.SyntaxKind.NewlineToken) &&
+            (this.tokens[scan].kind !== AST.SyntaxKind.EndOfTextToken) &&
             (!((this.tokens[scan].kind === AST.SyntaxKind.CommaToken) &&
                 (paren_depth === 0) && (wing_depth === 0) && (brk_depth === 0)))) {
             if (this.tokens[scan].kind === AST.SyntaxKind.LeftParenthesisToken)
@@ -425,6 +427,7 @@ export class Parser {
             (this.tokens[scan].kind !== AST.SyntaxKind.SemiColonToken) &&
             (this.tokens[scan].kind !== AST.SyntaxKind.Comment) &&
             (this.tokens[scan].kind !== AST.SyntaxKind.NewlineToken) &&
+            (this.tokens[scan].kind !== AST.SyntaxKind.EndOfTextToken) &&
             (!((this.tokens[scan].kind === AST.SyntaxKind.CommaToken) &&
                 (paren_depth === 0) && (wing_depth === 0) && (brk_depth === 0)))) {
             if (this.tokens[scan].kind === AST.SyntaxKind.LeftParenthesisToken)
@@ -467,8 +470,7 @@ export class Parser {
             i++;
         }
         if (blob.text !== '') args.push(blob);
-        this.pos = scan - 1;
-        //        console.log(args);
+        this.pos = scan;
         let ret: AST.CommandStatement = {
             kind: AST.SyntaxKind.CommandStatement,
             func: func,

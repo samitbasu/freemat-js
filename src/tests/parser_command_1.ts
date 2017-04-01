@@ -1,7 +1,6 @@
 import { suite, test } from "mocha-typescript";
 import * as AST from "../ast";
 import { parse, assertCast } from "./test_utils";
-import { inspect } from "util";
 const assert = require('chai').assert;
 
 function validate_command(y: AST.Node): AST.CommandStatement {
@@ -44,10 +43,9 @@ export class CommandStatement {
             const expr = `foo ${op}x bar\n`;
             console.log("      -> ", expr);
             const y = parse(expr);
-            console.log(inspect(y, { depth: 100 }))
             const h = validate_command(y);
             assert.equal(h.func.name, 'foo');
-            assert.equal(h.args.length, 1);
+            assert.equal(h.args.length, 2);
         }
     }
 
