@@ -1,7 +1,6 @@
 import { suite, test } from "mocha-typescript";
 import { parse, assertCast } from "./test_utils";
 import * as AST from "../ast";
-import { inspect } from "util";
 
 const assert = require("chai").assert;
 
@@ -176,6 +175,7 @@ export class Expressions {
     simple_postfix() {
         for (let shim of shims) {
             for (let op of postops) {
+                if (shim.left === ' ' && op.op === "'") continue;
                 const expr = `A=B${shim.left}${op.op}${shim.right};`;
                 console.log("      -> ", expr);
                 validatePostfix(parse(expr), op.kind);
@@ -236,11 +236,10 @@ export class Expressions {
                 const expr = `A=B${op1.op}C${op2.op};`;
                 console.log("      -> ", expr);
                 let y = parse(expr);
-                if (op1.prec < op2.prec) {
-                    validatePostfix(y, op2.kind);
-                } else if (op1.prec > op2.prec) {
+                if (op1.prec < op2.prec)
                     validateInfix(y, op1.kind);
-                }
+                else
+                    validatePostfix(y, op2.kind);
             }
         }
     }
@@ -326,7 +325,6 @@ export class Expressions {
             const expr = `${br.left}1 + 2 3${br.right};`;
             console.log("      -> ", expr);
             let y = parse(expr);
-            console.log(inspect(y, { depth: 100 }))
             const e = validateMatrixDef(y, br.kind).expressions;
             assert.equal(e.length, 1);
             assert.equal(e[0].length, 2);

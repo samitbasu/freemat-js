@@ -17,46 +17,170 @@ function UnionPos(toks: AST.Node[]): [number, number] {
     return [minpos, maxpos];
 }
 
-interface UnaryOperatorDetails {
-    precedence: number,
-    mapped_operator: AST.UnaryOperator
+const enum OpType {
+    Prefix,
+    Infix,
+    Postfix
 };
+
+// MATLAB does not have right associative operators:
+// You can build expressions that use any combination of arithmetic, relational, and logical operators.
+// Precedence levels determine the order in which MATLAB® evaluates an expression. Within each precedence
+// level, operators have equal precedence and are evaluated from left to right. The precedence rules for
+// MATLAB operators are shown in this list, ordered from highest precedence level to lowest precedence
+// level:
+// https://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
 interface OperatorDetails {
+    optype: OpType,
+    mapped_operator?: AST.UnaryOperator,
     precedence: number,
-    right_associative: boolean,
 };
 
-const unary_table = new Map<AST.SyntaxKind, UnaryOperatorDetails>([
-    [AST.SyntaxKind.PlusToken, { precedence: 9, mapped_operator: AST.SyntaxKind.UnaryPlusToken }],
-    [AST.SyntaxKind.MinusToken, { precedence: 9, mapped_operator: AST.SyntaxKind.UnaryMinusToken }],
-    [AST.SyntaxKind.NotToken, { precedence: 9, mapped_operator: AST.SyntaxKind.NotToken }]
+const unary_table = new Map<AST.SyntaxKind, OperatorDetails>([
+    [AST.SyntaxKind.PlusToken,          // Unary plus - priority 4
+    {
+        optype: OpType.Prefix,
+        precedence: 9,
+        mapped_operator: AST.SyntaxKind.UnaryPlusToken
+    }],
+    [AST.SyntaxKind.MinusToken,         // Unary minus - priority 4
+    {
+        optype: OpType.Prefix,
+        precedence: 9,
+        mapped_operator: AST.SyntaxKind.UnaryMinusToken
+    }],
+    [AST.SyntaxKind.NotToken,           // Unary not - priority 4
+    {
+        optype: OpType.Prefix,
+        precedence: 9,
+        mapped_operator: AST.SyntaxKind.NotToken
+    }]
 ]);
 
 const operator_table = new Map<AST.SyntaxKind, OperatorDetails>([
-    [AST.SyntaxKind.OrOrToken, { precedence: 1, right_associative: false }],
-    [AST.SyntaxKind.AndAndToken, { precedence: 2, right_associative: false }],
-    [AST.SyntaxKind.OrToken, { precedence: 3, right_associative: false }],
-    [AST.SyntaxKind.AndToken, { precedence: 4, right_associative: false }],
-    [AST.SyntaxKind.LessThanToken, { precedence: 5, right_associative: false }],
-    [AST.SyntaxKind.GreaterThanToken, { precedence: 5, right_associative: false }],
-    [AST.SyntaxKind.LessEqualsToken, { precedence: 5, right_associative: false }],
-    [AST.SyntaxKind.GreaterEqualsToken, { precedence: 5, right_associative: false }],
-    [AST.SyntaxKind.EqualsEqualsToken, { precedence: 5, right_associative: false }],
-    [AST.SyntaxKind.NotEqualsToken, { precedence: 5, right_associative: false }],
-    [AST.SyntaxKind.ColonToken, { precedence: 6, right_associative: false }],
-    [AST.SyntaxKind.PlusToken, { precedence: 7, right_associative: false }],
-    [AST.SyntaxKind.MinusToken, { precedence: 7, right_associative: false }],
-    [AST.SyntaxKind.TimesToken, { precedence: 8, right_associative: false }],
-    [AST.SyntaxKind.RightDivideToken, { precedence: 8, right_associative: false }],
-    [AST.SyntaxKind.LeftDivideToken, { precedence: 8, right_associative: false }],
-    [AST.SyntaxKind.DotTimesToken, { precedence: 8, right_associative: false }],
-    [AST.SyntaxKind.DotRightDivideToken, { precedence: 8, right_associative: false }],
-    [AST.SyntaxKind.DotLeftDivideToken, { precedence: 8, right_associative: false }],
-    [AST.SyntaxKind.NotToken, { precedence: 9, right_associative: false }],
-    [AST.SyntaxKind.PowerToken, { precedence: 10, right_associative: true }],
-    [AST.SyntaxKind.DotPowerToken, { precedence: 10, right_associative: true }]
+    [AST.SyntaxKind.OrOrToken,  // Short circuit OR - priority 12
+    {
+        optype: OpType.Infix,
+        precedence: 1,
+    }],
+    [AST.SyntaxKind.AndAndToken, // Short circuit AND - priority 11
+    {
+        optype: OpType.Infix,
+        precedence: 2,
+    }],
+    [AST.SyntaxKind.OrToken,    // Element-wise OR - priority 10
+    {
+        optype: OpType.Infix,
+        precedence: 3,
+    }],
+    [AST.SyntaxKind.AndToken,   // Element-wise AND - priority 9
+    {
+        optype: OpType.Infix,
+        precedence: 4,
+    }],
+    [AST.SyntaxKind.LessThanToken, // Less than - priority 8
+    {
+        optype: OpType.Infix,
+        precedence: 5,
+    }],
+    [AST.SyntaxKind.GreaterThanToken, // Greater than - priority 8
+    {
+        optype: OpType.Infix,
+        precedence: 5,
+    }],
+    [AST.SyntaxKind.LessEqualsToken, // Less equals - priority 8
+    {
+        optype: OpType.Infix,
+        precedence: 5,
+    }],
+    [AST.SyntaxKind.GreaterEqualsToken, // Greater equals - priority 8
+    {
+        optype: OpType.Infix,
+        precedence: 5,
+    }],
+    [AST.SyntaxKind.EqualsEqualsToken, // Equal to - priority 8
+    {
+        optype: OpType.Infix,
+        precedence: 5,
+    }],
+    [AST.SyntaxKind.NotEqualsToken, // Not equal to - priority 8
+    {
+        optype: OpType.Infix,
+        precedence: 5,
+    }],
+    [AST.SyntaxKind.ColonToken,     // Colon operator - priority 7
+    {
+        optype: OpType.Infix,
+        precedence: 6,
+    }],
+    [AST.SyntaxKind.PlusToken,      // Addition - priority 6
+    {
+        optype: OpType.Infix,
+        precedence: 7,
+    }],
+    [AST.SyntaxKind.MinusToken,     // Subtraction - priority 6
+    {
+        optype: OpType.Infix,
+        precedence: 7,
+    }],
+    [AST.SyntaxKind.TimesToken,     // Matrix multiplication - priority 5
+    {
+        optype: OpType.Infix,
+        precedence: 8,
+    }],
+    [AST.SyntaxKind.RightDivideToken, // Matrix right division - priority 5
+    {
+        optype: OpType.Infix,
+        precedence: 8,
+    }],
+    [AST.SyntaxKind.LeftDivideToken,  // Matrix left division - priority 5
+    {
+        optype: OpType.Infix,
+        precedence: 8,
+    }],
+    [AST.SyntaxKind.DotTimesToken,    // Multiplication - priority 5
+    {
+        optype: OpType.Infix,
+        precedence: 8,
+    }],
+    [AST.SyntaxKind.DotRightDivideToken, // Right division - priority 5
+    {
+        optype: OpType.Infix,
+        precedence: 8,
+    }],
+    [AST.SyntaxKind.DotLeftDivideToken, // Left division - priority 5
+    {
+        optype: OpType.Infix,
+        precedence: 8,
+    }],
+    // TODO - add .^-, .^+, .^~, ^-, ^+, ^~ at precedence 10
+    [AST.SyntaxKind.PowerToken,          // Matrix power - priority 2
+    {
+        optype: OpType.Infix,
+        precedence: 11,
+    }],
+    [AST.SyntaxKind.DotPowerToken,       // Power - priority 2
+    {
+        optype: OpType.Infix,
+        precedence: 11,
+    }],
+    [AST.SyntaxKind.TransposeToken,
+    {
+        optype: OpType.Postfix,
+        precedence: 11,
+    }],
+    [AST.SyntaxKind.HermitianToken,
+    {
+        optype: OpType.Postfix,
+        precedence: 11
+    }]
+
 ]);
+
+function is_unary(kind: AST.SyntaxKind): boolean {
+    return unary_table.has(kind);
+}
 
 export class Parser {
     readonly tokens: AST.Node[];
@@ -102,9 +226,9 @@ export class Parser {
     token(): AST.Node {
         return this.tokens[this.pos];
     }
-    next(): AST.Node {
-        if (this.pos + 1 < this.tokens.length)
-            return this.tokens[this.pos + 1];
+    next(ahead: number = 1): AST.Node {
+        if (this.pos + ahead < this.tokens.length)
+            return this.tokens[this.pos + ahead];
         return this.tokens[this.tokens.length - 1];
     }
     isSpacing(): boolean {
@@ -692,8 +816,13 @@ export class Parser {
         if (!in_bracket && this.isKind(AST.SyntaxKind.Whitespace)) this.munchWhiteSpace();
         // If we see a space, and the next operator is binary only, consume it
         if (this.isKind(AST.SyntaxKind.Whitespace) && operator_table.has(this.next().kind) &&
-            !unary_table.has(this.next().kind))
-            this.munchWhiteSpace();
+            !is_unary(this.next().kind)) this.munchWhiteSpace();
+        // If we see a space, and the next operator is ambiguous and it is followed
+        // by a space, then consume the space (only inside a bracket definition)
+        // This rule is to ensure that [1 + 2] --> [3], not [1,2]
+        if (this.isKind(AST.SyntaxKind.Whitespace) && operator_table.has(this.next().kind) &&
+            is_unary(this.next().kind) && (this.next(2).kind == AST.SyntaxKind.Whitespace) &&
+            in_bracket) this.munchWhiteSpace();
         while (operator_table.has(this.token().kind) &&
             ((operator_table.get(this.token().kind) as OperatorDetails).precedence >= p)) {
             let opr_save = this.token();
@@ -702,21 +831,28 @@ export class Parser {
             this.consume();
             // Binary operators (which we must have at this point), consume whitespace.
             this.munchWhiteSpace();
-            let q: number = 0;
-            if (op_info.right_associative)
-                q = op_info.precedence;
-            else
-                q = 1 + op_info.precedence;
-            let t1 = this.exp(q, in_bracket);
-            let root: AST.InfixExpression = {
-                kind: AST.SyntaxKind.InfixExpression,
-                leftOperand: t,
-                operator: opr_save as AST.BinaryOperator,
-                rightOperand: t1,
-                pos: t.pos,
-                end: t1.end
+            let q = 1 + op_info.precedence;
+            if (op_info.optype == OpType.Postfix) {
+                let root: AST.PostfixExpression = {
+                    kind: AST.SyntaxKind.PostfixExpression,
+                    operator: opr_save as (AST.TransposeToken | AST.HermitianToken),
+                    operand: t,
+                    pos: t.pos,
+                    end: opr_save.end
+                }
+                t = root;
+            } else {
+                let t1 = this.exp(q, in_bracket);
+                let root: AST.InfixExpression = {
+                    kind: AST.SyntaxKind.InfixExpression,
+                    leftOperand: t,
+                    operator: opr_save as AST.BinaryOperator,
+                    rightOperand: t1,
+                    pos: t.pos,
+                    end: t1.end
+                }
+                t = root;
             }
-            t = root;
         }
         return t;
     }
@@ -734,19 +870,18 @@ export class Parser {
     }
     primaryExpression(in_bracket: boolean): AST.Expression {
         // Simplified version for now...
-        if (this.isSpacing() && unary_table.has(this.next().kind)) {
+        if (this.isSpacing() && is_unary(this.next().kind)) {
             this.munchWhiteSpace();
             return this.primaryExpression(in_bracket);
         }
-        if (unary_table.has(this.token().kind)) {
-            let op: UnaryOperatorDetails =
-                unary_table.get(this.token().kind) as UnaryOperatorDetails;
+        if (is_unary(this.token().kind)) {
+            let op = unary_table.get(this.token().kind) as OperatorDetails;
             let tok = this.token();
             this.consume();
             this.munchWhiteSpace();
             let ret: AST.UnaryExpression = {
                 kind: AST.SyntaxKind.PrefixExpression,
-                operator: op.mapped_operator,
+                operator: op.mapped_operator!,
                 pos: tok.pos,
                 end: tok.end,
                 operand: this.exp(op.precedence, in_bracket)

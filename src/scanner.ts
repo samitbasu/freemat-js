@@ -84,14 +84,14 @@ const wide_operators_table = new Map([
     ['~=', AST.SyntaxKind.NotEqualsToken],
     ['&&', AST.SyntaxKind.AndAndToken],
     ['||', AST.SyntaxKind.OrOrToken],
-    [".'", AST.SyntaxKind.HermitianToken],
+    [".'", AST.SyntaxKind.TransposeToken],
 ]);
 
 const narrow_operators_table = new Map([
     ['^', AST.SyntaxKind.PowerToken],
     [';', AST.SyntaxKind.SemiColonToken],
     [',', AST.SyntaxKind.CommaToken],
-    ["'", AST.SyntaxKind.TransposeToken],
+    ["'", AST.SyntaxKind.HermitianToken],
     ['~', AST.SyntaxKind.NotToken],
     ['\\', AST.SyntaxKind.LeftDivideToken],
     ['/', AST.SyntaxKind.RightDivideToken],
