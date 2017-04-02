@@ -1,6 +1,7 @@
 import { suite, test } from "mocha-typescript";
 import * as AST from "../ast";
 import { parse, assertCast } from "./test_utils";
+import { inspect } from "util";
 
 const assert = require('chai').assert;
 
@@ -28,13 +29,14 @@ export class FunctionDeclarations {
             const y = parse(expr);
             let f = validate_function(y);
             assert.equal(f.returns.length, 3);
-            assert.equal(f.returns[0], 'A');
-            assert.equal(f.returns[1], 'B');
-            assert.equal(f.returns[2], 'C');
+            assert.equal(f.returns[0].name, 'A');
+            assert.equal(f.returns[1].name, 'B');
+            assert.equal(f.returns[2].name, 'C');
             assert.equal(f.args.length, 3);
-            assert.equal(f.args[0], 'X');
-            assert.equal(f.args[1], 'Y');
-            assert.equal(f.args[2], 'Z');
+            assert.equal(f.args[0].name, 'X');
+            assert.equal(f.args[1].name, 'Y');
+            assert.equal(f.args[2].name, 'Z');
+            assert.equal(f.name.name, 'foo');
         }
     }
 
@@ -46,7 +48,7 @@ export class FunctionDeclarations {
             const f = validate_function(y);
             assert.equal(f.returns.length, 0);
             assert.equal(f.args.length, 0);
-            assert.equal(f.name, 'foo');
+            assert.equal(f.name.name, 'foo');
         }
     }
 
@@ -56,8 +58,8 @@ export class FunctionDeclarations {
         const f = validate_function(y);
         assert.equal(f.returns.length, 1);
         assert.equal(f.args.length, 1);
-        assert.equal(f.name, 'foo');
-        assert.equal(f.body.kind, 'Block');
-        assert.equal(f.body.statements.length, 1);
+        assert.equal(f.name.name, 'foo');
+        const g = assertCast<AST.Block>(f.body, AST.SyntaxKind.Block);
+        assert.equal(g.statements.length, 2);
     }
 }

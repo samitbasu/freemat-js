@@ -256,7 +256,60 @@ export class Scanner {
         this.pos = endpos;
         return tok;
     }
+    isBlockCommentStart(): boolean {
+        if (this.buf.substring(this.pos, this.pos + 2) !== '%{') return false;
+        // Could be the start of a block comment... but need to scan backwards
+        let scan = this.pos - 1;
+        while (true) {
+            if (scan < 0) {
+                return true;
+            }
+            if (isablank(this.buf.charAt(scan))) {
+                scan--;
+            } else if (this.buf.charAt(scan) === '\n') {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    processBlockComment(): AST.Comment {
+        let scan = this.pos + 2;
+        let startline = true;
+        let endpos = scan;
+        while (true) {
+            if (scan >= this.buf.length) {
+                endpos = -1;
+                break;
+            }
+            if (startline && this.buf.substring(scan, scan + 2) === '%}') {
+                endpos = scan + 2;
+                break;
+            }
+            if (isablank(this.buf.charAt(scan))) scan++;
+            else if (this.buf.charAt(scan) === '\n') {
+                scan++;
+                startline = true;
+            } else {
+                scan++;
+                startline = false;
+            }
+        }
+        if (endpos === -1)
+            throw Error("Unterminated block comment");
+        let tok: AST.Comment = {
+            kind: AST.SyntaxKind.Comment,
+            text: this.buf.substring(this.pos, endpos),
+            pos: this.pos,
+            end: endpos
+        }
+        this.pos = endpos;
+        return tok;
+    }
     processComment(): AST.Comment {
+        // check for a block comment case
+        if (this.isBlockCommentStart())
+            return this.processBlockComment();
         let endpos = this.consume(this.pos + 1, isnotnewline);
         let tok: AST.Comment = {
             kind: AST.SyntaxKind.Comment,
@@ -267,11 +320,19 @@ export class Scanner {
         this.pos = endpos;
         return tok;
     }
-    // TODO - add support for '''
     processString(): AST.StringLiteral {
-        let end_index = this.buf.indexOf("'", this.pos + 1);
-        if (end_index === -1) {
-            throw Error('Unterminated string at ' + this.pos);
+        let end_found = false;
+        let end_index = this.pos + 1;
+        while (!end_found) {
+            if (end_index >= this.buf.length) {
+                throw Error('Unterminated string at ' + this.pos);
+            }
+            if (this.buf.substring(end_index, end_index + 3) === "'''")
+                end_index = end_index + 3;
+            else if (this.buf[end_index] === "'")
+                end_found = true;
+            else
+                end_index = end_index + 1;
         }
         let tok: AST.StringLiteral = {
             kind: AST.SyntaxKind.StringLiteral,

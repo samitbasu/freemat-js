@@ -43,6 +43,6 @@ export class IfStatements {
         assert.equal(q.elifs.length, 2);
         assert(q.els);
         if (q.els)
-            assertCast<AST.ElseStatement>(q.els, AST.SyntaxKind.ElseToken);
+            assertCast<AST.ElseStatement>(q.els, AST.SyntaxKind.ElseStatement);
     }
 }

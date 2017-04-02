@@ -14,7 +14,7 @@ export class Comments {
         '% Comment above, single empty after\n a = 32;%\n',
         '% Comment above, single empty after - no semi\n a = 32%\n',
         '% Comments bracket\n a = 32; % and inline\n',
-        '%{\n Block comments\n can span multiple\n lines\n%}\na=32;'
+        '\n   %{\n Block comments\n can span multiple\n lines\n%}\na=32;'
     ];
     @test("should parse statements with comments")
     simple_statement() {
