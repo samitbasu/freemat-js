@@ -52,9 +52,21 @@ function Stride(dims: number[]): number[] {
     return ret;
 }
 
+function VectorResizeDim(x: number[], newlen: number): number[] {
+    const cdim = Count(x);
+    let ret: number[] = [];
+    for (let i = 0; i < x.length; i++)
+        if (x[i] === cdim) {
+            ret[i] = newlen;
+        } else {
+            ret[i] = 1;
+        }
+    return ret;
+}
+
 function IsVector(x: number[]): boolean {
     const cdim = Count(x);
-    return ((cdim === x[0]) || (cdim === x[1]));
+    return (x.indexOf(cdim) !== -1);
 }
 
 function IsRowVector(dims: number[]): boolean {
@@ -258,7 +270,7 @@ function ComputeIndex(mydims: number[], coords: NumericArray): number {
         return ComputeIndex(mydims, ExtendDims(coords, mydims.length));
 }
 
-function Resize(x: FMArray, new_dims: number[]): FMArray {
+export function Resize(x: FMArray, new_dims: number[]): FMArray {
     // Resize the array to the new dimensions.  There are several considerations:
     //  1.  If the resize is a vector one and this is a vector and the capacity
     //      is adequate, we can simply adjust the dimension
@@ -281,6 +293,10 @@ function Resize(x: FMArray, new_dims: number[]): FMArray {
     }
     const imag_part = CopyLoop(x.dims, x.imag, x.mytype, new_dims);
     return new FMArray(new_dims, real_part, imag_part, x.mytype);
+}
+
+function Vectorize(x: FMArray): FMArray {
+    return new FMArray([x.length, 1], x.real, x.imag, x.mytype);
 }
 
 
@@ -314,10 +330,11 @@ function GetNDimScalar(frm: FMArray, where: FMArray): FMArray {
 function SetScalar(to: FMArray, where: FMArray, what: FMArray): FMArray {
     const ndx = where.real[0];
     if (ndx > to.length) {
-        if (IsRowVector(to.dims)) {
-            return SetScalar(Resize(to, [1, ndx]), where, what);
+        if (IsVector(to.dims)) {
+            return SetScalar(Resize(to, VectorResizeDim(to.dims, ndx)), where, what);
+        } else {
+            return SetScalar(Resize(Vectorize(to), [ndx, 1]), where, what);
         }
-        return SetScalar(Resize(to, [ndx, 1]), where, what);
     }
     if (!what.imag) {
         to.real[ndx - 1] = what.real[0];
