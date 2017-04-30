@@ -54,6 +54,9 @@ function Stride(dims: number[]): number[] {
 
 function VectorResizeDim(x: number[], newlen: number): number[] {
     const cdim = Count(x);
+    if (cdim === 1) {
+        return [1, newlen];
+    }
     let ret: number[] = [];
     for (let i = 0; i < x.length; i++)
         if (x[i] === cdim) {
@@ -67,10 +70,6 @@ function VectorResizeDim(x: number[], newlen: number): number[] {
 function IsVector(x: number[]): boolean {
     const cdim = Count(x);
     return (x.indexOf(cdim) !== -1);
-}
-
-function IsRowVector(dims: number[]): boolean {
-    return (IsVector(dims) && (dims[0] === 1));
 }
 
 function AllZeros(x: NumericArray): boolean {
@@ -183,6 +182,10 @@ export function FnMakeScalarComplex(t: [number, number]): FMArray {
     return f;
 }
 
+export function FnMakeScalarLogical(t: boolean): FMArray {
+    return new FMArray(1, t ? [1] : [0], undefined, ArrayType.Logical);
+}
+
 function DimString(dims: number[]): string {
     return '[' + dims.toString() + ']';
 }
@@ -199,7 +202,7 @@ export function ComputeBinaryOpOutputDim(a: FMArray, b: FMArray): number[] {
     if (a.length === 1) return b.dims;
     if (b.length === 1) return a.dims;
     if ((a.length !== b.length) || !SameDims(a.dims, b.dims))
-        throw new TypeError("Cannot apply an operator to variables of size " + DimString(a.dims) + " and " + DimString(b.dims));
+        throw new TypeError("Cannot apply an operator to variables of size " + DimString(a.dims) + " and " + DimString(b.dims) + " - mismatch in dimensions");
     return a.dims;
 }
 

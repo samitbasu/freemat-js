@@ -1,7 +1,33 @@
 import { Adder, Subtractor, Multiplier, RightDivider, LeftDivider } from './operators';
+import { LessThan, LessEquals, GreaterThan, GreaterEquals, Equals, NotEquals } from './comparators';
 import { BinOp } from './binop';
+import { CmpOp } from './cmpop';
 import { FMArray, NumericArray, ArrayType, ToType } from './arrays';
 import { DGEMM, ZGEMM, DTRANSPOSE, ZTRANSPOSE, ZHERMITIAN, Logger, DSOLVE, ZSOLVE } from './mat.node';
+
+export function lt(A: FMArray, B: FMArray): FMArray {
+    return CmpOp(A, B, new LessThan);
+}
+
+export function le(A: FMArray, B: FMArray): FMArray {
+    return CmpOp(A, B, new LessEquals);
+}
+
+export function gt(A: FMArray, B: FMArray): FMArray {
+    return CmpOp(A, B, new GreaterThan);
+}
+
+export function ge(A: FMArray, B: FMArray): FMArray {
+    return CmpOp(A, B, new GreaterEquals);
+}
+
+export function eq(A: FMArray, B: FMArray): FMArray {
+    return CmpOp(A, B, new Equals);
+}
+
+export function ne(A: FMArray, B: FMArray): FMArray {
+    return CmpOp(A, B, new NotEquals);
+}
 
 export function plus(A: FMArray, B: FMArray): FMArray {
     return BinOp(A, B, new Adder);
