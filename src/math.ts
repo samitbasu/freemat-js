@@ -2,7 +2,7 @@ import { Adder, Subtractor, Multiplier, RightDivider, LeftDivider } from './oper
 import { LessThan, LessEquals, GreaterThan, GreaterEquals, Equals, NotEquals } from './comparators';
 import { BinOp } from './binop';
 import { CmpOp } from './cmpop';
-import { FMArray, NumericArray, ArrayType, ToType } from './arrays';
+import { FMArray, NumericArray, ArrayType, ToType, MakeComplex } from './arrays';
 import { DGEMM, ZGEMM, DTRANSPOSE, ZTRANSPOSE, ZHERMITIAN, Logger, DSOLVE, ZSOLVE } from './mat.node';
 
 export function lt(A: FMArray, B: FMArray): FMArray {
@@ -98,6 +98,16 @@ export function hermitian(A: FMArray): FMArray {
     if (!A.imag) return transpose(A);
     let C = ZHERMITIAN(A, mk_comp);
     return ToType(C, A.mytype);
+}
+
+export function conj(A: FMArray): FMArray {
+    if (!A.imag) return A;
+    let B = MakeComplex(new FMArray(A.dims, undefined, undefined, A.mytype));
+    for (let i = 0; i < A.length; i++) {
+        B.real[i] = A.real[i];
+        B.imag![i] = -A.imag[i];
+    }
+    return B;
 }
 
 export function mldivide(A: FMArray, B: FMArray, logger: Logger): FMArray {

@@ -256,16 +256,40 @@ function RealDemote(to: FMArray): FMArray {
     return to;
 }
 
+function ComputeInner2(mydims: number[], coords: NumericArray): number {
+    if ((coords[0] < 1) || (coords[0] > mydims[0]) ||
+        (coords[1] < 1) || (coords[1] > mydims[1])) return -1;
+    return (coords[0] - 1 +
+        (coords[1] - 1) * mydims[0]);
+}
+
+function ComputeInner3(mydims: number[], coords: NumericArray): number {
+    if ((coords[0] < 1) || (coords[0] > mydims[0]) ||
+        (coords[1] < 1) || (coords[1] > mydims[1]) ||
+        (coords[2] < 1) || (coords[2] > mydims[2])) return -1;
+    return (coords[0] - 1 +
+        (coords[1] - 1) * mydims[0] +
+        (coords[2] - 1) * mydims[0] * mydims[1]);
+}
+
+function ComputeIndexInner(mydims: number[], coords: NumericArray): number {
+    if (coords.length === 3)
+        return ComputeInner3(mydims, coords);
+    if (coords.length === 2)
+        return ComputeInner2(mydims, coords);
+    let ndx = 0;
+    let slice_size = 1;
+    for (let i = 0; i < coords.length; i++) {
+        if ((coords[i] < 1) || (coords[i] > mydims[i])) return -1;
+        ndx = ndx + (coords[i] - 1) * slice_size;
+        slice_size *= mydims[i];
+    }
+    return ndx;
+}
+
 function ComputeIndex(mydims: number[], coords: NumericArray): number {
     if (mydims.length === coords.length) {
-        let ndx = 0;
-        let slice_size = 1;
-        for (let i = 0; i < coords.length; i++) {
-            if ((coords[i] < 1) || (coords[i] > mydims[i])) return -1;
-            ndx = ndx + (coords[i] - 1) * slice_size;
-            slice_size *= mydims[i];
-        }
-        return ndx;
+        return ComputeIndexInner(mydims, coords);
     }
     if (coords.length > mydims.length)
         return ComputeIndex(ExtendDims(mydims, coords.length), coords);

@@ -16,6 +16,19 @@ export function assertCast<T extends AST.Node>(f: AST.Node, k: AST.SyntaxKind): 
     return (f as T);
 }
 
+export function tic(): number {
+    let t = process.hrtime();
+    return t[0] + t[1] / 1.0e9;
+}
+
+export function time_it(func: () => void): number {
+    let t1 = tic();
+    func();
+    let t2 = (tic() - t1);
+    console.log("      -> Time Elapsed ", t2, " s");
+    return t2;
+}
+
 export function parse(txt: string): AST.Block {
     let toks = Tokenize(txt);
     let pars = new Parser(toks, txt);
@@ -30,7 +43,7 @@ export function rand_array_complex(dims: number[]): FMArray {
     let C = MakeComplex(new FMArray(dims));
     for (let ndx = 0; ndx < C.length; ndx++) {
         C.real[ndx] = Math.floor(Math.random() * 10);
-        C.imag[ndx] = Math.floor(Math.random() * 10);
+        C.imag![ndx] = Math.floor(Math.random() * 10);
     }
     return C;
 }

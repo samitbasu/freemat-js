@@ -4,9 +4,7 @@ import { assert } from "chai";
 
 import { Get, FMArray } from "../arrays";
 
-import { is_complex, is_nan } from "../inspect";
-
-import { cdiv, rand_array, rand_array_complex, test_mat, test_mat_complex, mkv, mks, mkc, mkl } from "./test_utils";
+import { cdiv, rand_array, rand_array_complex, test_mat, test_mat_complex, mks, mkc, mkl } from "./test_utils";
 
 import { plus, minus, times, rdivide, ldivide, lt, gt, le, ge, eq, ne } from "../math";
 
