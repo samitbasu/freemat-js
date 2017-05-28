@@ -1,5 +1,7 @@
-import { FMArray, FnMakeScalarReal, FnMakeScalarComplex } from './arrays';
-import { plus, minus, times, mtimes, transpose, mldivide, mrdivide } from './math';
+import { FMArray, FnMakeScalarReal, FnMakeScalarComplex, Copy, Set } from './arrays';
+import { rnaz, hermitian, plus, minus, times, mtimes, transpose, mldivide, mrdivide } from './math';
+import { le, ge, lt, gt, eq, ne } from './math';
+import { ncat } from './ncat';
 import { start } from 'repl';
 import { JSWriter } from './jswalker';
 import Tokenize from './scanner';
@@ -16,7 +18,18 @@ const sandbox = {
     transpose: transpose,
     mldivide: mldivide,
     mrdivide: mrdivide,
-    mkc: FnMakeScalarComplex
+    mkc: FnMakeScalarComplex,
+    ncat: ncat,
+    console: console,
+    hermitian: hermitian,
+    Set: FMSet,
+    le: le,
+    ge: ge,
+    lt: lt,
+    gt: gt,
+    eq: eq,
+    ne: ne,
+    rnaz: rnaz
 };
 
 const ctext = new vm.createContext(sandbox);
@@ -31,9 +44,11 @@ function myTranslator(cmd: string, context: any, filename: any, callback: any): 
     const b = pars.block();
     console.log(inspect(b, { depth: 10 }));
     const jscmd = JSWriter(b);
+    console.log(jscmd);
     const script = new vm.Script(jscmd);
     script.runInContext(ctext);
     console.log(inspect(ctext));
+    callback("");
     //    console.log(jscmd);
     //    eval(jscmd);
 }
@@ -52,3 +67,18 @@ local.context.transpose = transpose;
 local.context.mldivide = mldivide;
 local.context.mrdivide = mrdivide;
 local.context.mks = FnMakeScalarReal;
+
+function FMSet(a: FMArray, args: any[], value: FMArray): FMArray {
+    if (args.length === 0) {
+        Copy(value, a);
+        return a;
+    }
+    if (args.length === 1) {
+        let p = args[0];
+        if (p.type === "array") {
+            a = Set(a, p.index, value);
+            return a;
+        }
+    }
+    throw "Unhandled set case!";
+}

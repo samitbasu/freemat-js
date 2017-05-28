@@ -1,10 +1,11 @@
-import { Set, FMArray } from "../arrays";
+import { Set, FMArray, FnMakeScalarReal } from "../arrays";
 import { assert } from "chai";
 import { time_it, test_mat } from "./test_utils";
 import { suite, test } from "mocha-typescript";
 import { plus, mtimes } from "../math";
 
 let A = new FMArray([512, 512, 10]);
+const mks = FnMakeScalarReal;
 
 @suite
 export class BasicTimingTests {
@@ -13,7 +14,7 @@ export class BasicTimingTests {
             for (let z = 1; z <= 10; z++) {
                 for (let i = 1; i <= 512; i++) {
                     for (let j = 1; j <= 512; j++) {
-                        A = Set(A, new FMArray([3, 1], [j, i, z]), new FMArray([1, 1], [i - j]));
+                        A = Set(A, [mks(j), mks(i), mks(z)], new FMArray([1, 1], [i - j]));
                     }
                 }
             }

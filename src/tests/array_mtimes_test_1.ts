@@ -24,7 +24,7 @@ function matmul(A: FMArray, B: FMArray): FMArray {
             for (let ndx = 1; ndx <= Acols; ndx++) {
                 accum = plus(accum, times(Get(A, mkv([row, ndx])), Get(B, mkv([ndx, col]))));
             }
-            Set(C, mkv([row, col]), accum);
+            Set(C, [mks(row), mks(col)], accum);
         }
     }
     return C;

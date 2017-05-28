@@ -59,7 +59,7 @@ export function test_mat(rows: number, cols: number): FMArray {
     let C = new FMArray([rows, cols]);
     for (let row = 1; row <= rows; row++)
         for (let col = 1; col <= cols; col++)
-            C = Set(C, mkv([row, col]), mks(row * cols + col));
+            C = Set(C, [mks(row), mks(col)], mks(row * cols + col));
     return C;
 }
 
@@ -67,7 +67,7 @@ export function test_mat_complex(rows: number, cols: number): FMArray {
     let C = new FMArray([rows, cols]);
     for (let row = 1; row <= rows; row++)
         for (let col = 1; col <= cols; col++)
-            C = Set(C, mkv([row, col]), mkc([row * cols + col, row * cols - col]));
+            C = Set(C, [mks(row), mks(col)], mkc([row * cols + col, row * cols - col]));
     return C;
 }
 

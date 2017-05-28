@@ -101,14 +101,14 @@ export class ResizeTests {
     }
     @test "should correctly vector-resize a matrix"() {
         let P = new FMArray([3, 4], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-        P = Set(P, mks(13), mks(1));
+        P = Set(P, [mks(13)], mks(1));
         for (let ndx = 1; ndx <= 12; ndx++) {
             assert.equal(Get(P, mks(ndx)).real[0], ndx);
         }
     }
     @test "should preserve the column-ness of a vector when resizing"() {
         let P = new FMArray([4, 1], [1, 2, 3, 4]);
-        P = Set(P, mks(13), mks(1));
+        P = Set(P, [mks(13)], mks(1));
         assert.equal(P.dims[0], 13);
         assert.equal(P.dims[1], 1);
         for (let ndx = 1; ndx <= 4; ndx++) {
@@ -117,7 +117,7 @@ export class ResizeTests {
     }
     @test "should preserve the row-ness of a vector when resizing"() {
         let P = new FMArray([1, 4], [1, 2, 3, 4]);
-        P = Set(P, mks(13), mks(1));
+        P = Set(P, [mks(13)], mks(1));
         assert.equal(P.dims[0], 1);
         assert.equal(P.dims[1], 13);
         for (let ndx = 1; ndx <= 4; ndx++) {
@@ -126,7 +126,7 @@ export class ResizeTests {
     }
     @test "should preserve the non-singleton dimension of a vector when resizing"() {
         let P = new FMArray([1, 1, 1, 4], [1, 2, 3, 4]);
-        P = Set(P, mks(13), mks(1));
+        P = Set(P, [mks(13)], mks(1));
         assert.deepEqual(P.dims, [1, 1, 1, 13]);
         for (let ndx = 1; ndx <= 4; ndx++) {
             assert.equal(Get(P, mks(ndx)).real[0], ndx);

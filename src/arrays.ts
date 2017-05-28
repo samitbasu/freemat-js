@@ -329,8 +329,14 @@ function Vectorize(x: FMArray): FMArray {
 
 // This covers the case A(i,j,k) = m,
 // where m is a scalar, and i, j, k are scalars too
-function SetNDimScalar(to: FMArray, where: FMArray, what: FMArray): FMArray {
-    let ndx = ComputeIndex(to.dims, where.real);
+function SetNDimScalar(to: FMArray, where: FMArray[], what: FMArray): FMArray {
+    let scalars: number[] = [];
+    for (let i = 0; i < where.length; i++) {
+        if (where[i].length !== 1)
+            throw "Unhandled set case";
+        scalars[i] = where[i].real[0];
+    }
+    let ndx = ComputeIndex(to.dims, scalars);
     if (ndx >= 0) {
         to.real[ndx] = what.real[0];
         if (to.imag) {
@@ -342,7 +348,7 @@ function SetNDimScalar(to: FMArray, where: FMArray, what: FMArray): FMArray {
         }
         return to;
     }
-    return SetNDimScalar(Resize(to, NewSize(to.dims, where.real)), where, what);
+    return SetNDimScalar(Resize(to, NewSize(to.dims, scalars)), where, what);
 
 }
 
@@ -378,14 +384,14 @@ function SetScalar(to: FMArray, where: FMArray, what: FMArray): FMArray {
     return to;
 }
 
-export function Set(to: FMArray, where: FMArray, what: FMArray): FMArray {
+export function Set(to: FMArray, where: FMArray[], what: FMArray): FMArray {
     // If we need complex promotion, do it first
     if (what.imag && !to.imag) {
         return Set(MakeComplex(to), where, what);
     }
     // Handle scalar case first
     if ((where.length === 1) && (what.length === 1)) {
-        return SetScalar(to, where, what);
+        return SetScalar(to, where[0], what);
     }
     if (what.length === 1) {
         return SetNDimScalar(to, where, what);

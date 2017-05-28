@@ -12,7 +12,7 @@ class JSWalker {
         return expr.map((ex) => this.writeExpression(ex)).join(',');
     }
     writeArrayIndexExpression(tree: AST.ArrayIndexExpression): string {
-        return '{array: (' + this.writeExpressionList(tree.expressions) + ')}';
+        return '{type: "array", index: [' + this.writeExpressionList(tree.expressions) + ']}';
     }
     writeCellIndexExpression(tree: AST.CellIndexExpression): string {
         return '{cell: (' + this.writeExpressionList(tree.expressions) + ')}';
@@ -70,6 +70,14 @@ class JSWalker {
             this.writeExpression(tree.leftOperand) + ',' +
             this.writeExpression(tree.rightOperand) + ')';
     }
+    writePostfixExpression(tree: AST.PostfixExpression): string {
+        switch (tree.operator.kind) {
+            case AST.SyntaxKind.TransposeToken:
+                return 'transpose(' + this.writeExpression(tree.operand) + ')';
+            case AST.SyntaxKind.HermitianToken:
+                return 'hermitian(' + this.writeExpression(tree.operand) + ')';
+        }
+    }
     writePrefixExpression(tree: AST.UnaryExpression): string {
         switch (tree.operator) {
             case AST.SyntaxKind.UnaryPlusToken:
@@ -82,13 +90,13 @@ class JSWalker {
     }
     writeMatDefinition(exp: AST.Expression[][], open: string, close: string): string {
         return open + exp.map((ex) => {
-            return 'hcat(' + this.writeExpressionList(ex) + ')';
+            return 'ncat([' + this.writeExpressionList(ex) + '],1)';
         }).join(',') + close;
     }
     writeMatrixDefinition(tree: AST.MatrixDefinition): string {
         switch (tree.kind) {
             case AST.SyntaxKind.MatrixDefinition:
-                return this.writeMatDefinition(tree.expressions, 'vcat(', ')');
+                return this.writeMatDefinition(tree.expressions, 'ncat([', '],0)');
             case AST.SyntaxKind.CellDefinition:
                 return this.writeMatDefinition(tree.expressions, '{', '}');
         }
@@ -108,6 +116,8 @@ class JSWalker {
                 return this.writeInfixExpression(tree as AST.InfixExpression);
             case AST.SyntaxKind.PrefixExpression:
                 return this.writePrefixExpression(tree as AST.UnaryExpression);
+            case AST.SyntaxKind.PostfixExpression:
+                return this.writePostfixExpression(tree as AST.PostfixExpression);
             case AST.SyntaxKind.VariableDereference:
                 return this.writeVariableDereference(tree as AST.VariableDereference);
             case AST.SyntaxKind.MatrixDefinition:
@@ -133,27 +143,29 @@ class JSWalker {
     writeStraightAssignmentStatement(tree: AST.AssignmentStatement): string {
         let ret = tree.lhs.identifier.name + ' = ';
         ret += this.writeExpression(tree.expression);
+        if (tree.printit)
+            ret += '\nconsole.log(' + tree.lhs.identifier.name + ')';
         return ret;
     }
     writeAssignmentStatement(tree: AST.AssignmentStatement): string {
         if (tree.lhs.deref.length === 0)
             return this.writeStraightAssignmentStatement(tree);
-        let ret = 'set(' + tree.lhs.identifier.name;
+        let ret = tree.lhs.identifier.name + ' = Set(' + tree.lhs.identifier.name;
         ret += ',' + '[' + tree.lhs.deref.map((x) => this.writeDereferenceExpression(x)).join(',') + '],';
         ret += this.writeExpression(tree.expression) + ')';
+        if (tree.printit)
+            ret += '\nconsole.log(' + tree.lhs.identifier.name + ')';
         return ret;
     }
     writeForStatement(tree: AST.ForStatement): string {
         let ret = 'for ' + tree.expression.identifier.name + ' = ' +
             this.writeExpression(tree.expression.expression) + '\n';
         ret += this.writeBlock(tree.body);
-        ret += this.pad() + 'end\n';
         return ret;
     }
     writeWhileStatement(tree: AST.WhileStatement): string {
-        let ret = 'while (raz(' + this.writeExpression(tree.expression) + '))\n';
+        let ret = 'while (rnaz(' + this.writeExpression(tree.expression) + '))\n';
         ret += this.writeBlock(tree.body);
-        ret += this.pad() + 'end\n';
         return ret;
     }
     writeElseStatement(tree: AST.ElseStatement): string {
@@ -162,12 +174,12 @@ class JSWalker {
         return ret;
     }
     writeElseIfStatement(tree: AST.ElseIfStatement): string {
-        let ret = this.pad() + 'else if (raz(' + this.writeExpression(tree.expression) + '))\n';
+        let ret = this.pad() + 'else if (rnaz(' + this.writeExpression(tree.expression) + '))\n';
         ret += this.writeBlock(tree.body);
         return ret;
     }
     writeIfStatement(tree: AST.IfStatement): string {
-        let ret = 'if (raz(' + this.writeExpression(tree.expression) + ')\n';
+        let ret = 'if (rnaz(' + this.writeExpression(tree.expression) + '))\n';
         ret += this.writeBlock(tree.body);
         for (let elif of tree.elifs) {
             ret += this.writeElseIfStatement(elif as AST.ElseIfStatement);
@@ -177,7 +189,10 @@ class JSWalker {
         return ret;
     }
     writeExpressionStatement(tree: AST.ExpressionStatement): string {
-        return this.writeExpression(tree.expression);
+        let ret = this.writeExpression(tree.expression);
+        if (tree.printit)
+            ret = 'console.log(' + ret + ')';
+        return ret;
     }
     writeCaseStatement(tree: AST.CaseStatement): string {
         let ret = this.pad() + 'case ' + this.writeExpression(tree.expression) + '\n';
@@ -196,7 +211,6 @@ class JSWalker {
         }
         if (tree.otherwise)
             ret += this.writeOtherwiseStatement(tree.otherwise as AST.OtherwiseStatement);
-        ret += this.pad() + 'end\n';
         return ret;
     }
     writeCatchStatement(tree: AST.CatchStatement): string {
@@ -211,7 +225,6 @@ class JSWalker {
         let ret = 'try\n';
         ret += this.writeBlock(tree.body);
         if (tree.catc) ret += this.writeCatchStatement(tree.catc as AST.CatchStatement);
-        ret += this.pad() + 'end\n';
         return ret;
     }
     writeIdentifierList(list: AST.Identifier[]) {
@@ -228,7 +241,6 @@ class JSWalker {
         }
         ret += '\n';
         ret += this.writeBlock(tree.body);
-        ret += this.pad() + 'end\n';
         return ret;
     }
     writeCommandStatement(tree: AST.CommandStatement): string {

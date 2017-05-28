@@ -129,3 +129,11 @@ export function mrdivide(A: FMArray, B: FMArray, logger: Logger): FMArray {
         C = transpose(DSOLVE(transpose(B), transpose(A), logger, mk_real));
     return ToType(C, Math.max(A.mytype, B.mytype));
 }
+
+// How is empty handled?
+export function rnaz(A: FMArray): boolean {
+    for (let i = 0; i < A.length; i++) {
+        if (A.real[i] !== 0) return true;
+    }
+    return false;
+}

@@ -21,13 +21,13 @@ export class MLDivideAssignments {
         for (let dim of sizes) {
             let C = new FMArray([dim, dim]);
             for (let i = 1; i <= dim; i++) {
-                C = Set(C, mkv([i, i]), mks(1));
+                C = Set(C, [mks(i), mks(i)], mks(1));
                 if (i < dim)
-                    C = Set(C, mkv([i + 1, i]), mks(1));
+                    C = Set(C, [mks(i + 1), mks(i)], mks(1));
             }
             let B = new FMArray([dim, 1]);
             for (let i = 1; i <= dim; i++) {
-                B = Set(B, mks(i), mks(1));
+                B = Set(B, [mks(i)], mks(1));
             }
             const D = mldivide(C, B, console.log);
             for (let i = 1; i <= dim; i++) {
@@ -42,13 +42,13 @@ export class MLDivideAssignments {
         for (let dim of [2, 4, 8, 32, 64, 128]) {
             let C = new FMArray([dim, dim]);
             for (let i = 1; i <= dim; i++) {
-                C = Set(C, mkv([i, i]), mkc([1, 1]));
+                C = Set(C, [mks(i), mks(i)], mkc([1, 1]));
                 if (i < dim)
-                    C = Set(C, mkv([i + 1, i]), mkc([1, -1]));
+                    C = Set(C, [mks(i + 1), mks(i)], mkc([1, -1]));
             }
             let B = new FMArray([dim, 1]);
             for (let i = 1; i <= dim; i++) {
-                B = Set(B, mks(i), mkc([i, -i]));
+                B = Set(B, [mks(i)], mkc([i, -i]));
             }
             const D = mldivide(C, B, console.log);
             let T = new FMArray([dim, 1]);
@@ -59,7 +59,7 @@ export class MLDivideAssignments {
                 let tmp0 = Get(B, mks(i));
                 let tmp1 = minus(tmp0, times(prev, beta));
                 let tmp2 = times(tmp1, recip_alpha);
-                T = Set(T, mks(i), tmp2);
+                T = Set(T, [mks(i)], tmp2);
                 prev = Get(T, mks(i));
             }
             for (let i = 1; i <= dim; i++) {
@@ -71,12 +71,12 @@ export class MLDivideAssignments {
         for (let dim of sizes) {
             let C = new FMArray([2 * dim, dim]);
             for (let i = 1; i <= dim; i++) {
-                C = Set(C, mkv([i, i]), mks(1));
-                C = Set(C, mkv([i + dim, i]), mks(1));
+                C = Set(C, [mks(i), mks(i)], mks(1));
+                C = Set(C, [mks(i + dim), mks(i)], mks(1));
             }
             let B = new FMArray([2 * dim, 1]);
             for (let i = 1; i <= 2 * dim; i++) {
-                B = Set(B, mkv([i, 1]), mks(i));
+                B = Set(B, [mks(i), mks(1)], mks(i));
             }
             const D = mldivide(C, B, console.log);
             for (let i = 1; i <= dim; i++) {
@@ -88,13 +88,13 @@ export class MLDivideAssignments {
         for (let dim of sizes) {
             let C = new FMArray([2 * dim, dim]);
             for (let i = 1; i <= dim; i++) {
-                C = Set(C, mkv([i, i]), mks(1));
-                C = Set(C, mkv([i + dim, i]), mks(1));
+                C = Set(C, [mks(i), mks(i)], mks(1));
+                C = Set(C, [mks(i + dim), mks(i)], mks(1));
             }
             let B = new FMArray([2 * dim, 4]);
             for (let i = 1; i <= 2 * dim; i++) {
                 for (let j = 1; j <= 4; j++) {
-                    B = Set(B, mkv([i, j]), mks(i * j));
+                    B = Set(B, [mks(i), mks(j)], mks(i * j));
                 }
             }
             const D = mldivide(C, B, console.log);
@@ -112,12 +112,12 @@ export class MLDivideAssignments {
         for (let dim of sizes) {
             let C = new FMArray([dim, 2 * dim]);
             for (let i = 1; i <= dim; i++) {
-                C = Set(C, mkv([i, i]), mks(1));
-                C = Set(C, mkv([i, i + dim]), mks(1));
+                C = Set(C, [mks(i), mks(i)], mks(1));
+                C = Set(C, [mks(i), mks(i + dim)], mks(1));
             }
             let B = new FMArray([dim, 1]);
             for (let i = 1; i <= dim; i++) {
-                B = Set(B, mkv([i, 1]), mks(i));
+                B = Set(B, [mks(i), mks(1)], mks(i));
             }
             const D = mldivide(C, B, console.log);
             for (let i = 1; i <= dim; i++) {
