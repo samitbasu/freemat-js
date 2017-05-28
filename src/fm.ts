@@ -7,7 +7,13 @@ import { JSWriter } from './jswalker';
 import Tokenize from './scanner';
 import { Parser } from './parser';
 import { inspect } from 'util';
+import { ColonGenerator } from './colon';
 const vm = require('vm');
+
+
+function sv(x: FMArray): number {
+    return x.real[0];
+}
 
 const sandbox = {
     mks: FnMakeScalarReal,
@@ -22,6 +28,7 @@ const sandbox = {
     ncat: ncat,
     console: console,
     hermitian: hermitian,
+    ColonGenerator: ColonGenerator,
     Set: FMSet,
     le: le,
     ge: ge,
@@ -29,6 +36,7 @@ const sandbox = {
     gt: gt,
     eq: eq,
     ne: ne,
+    sv: sv,
     rnaz: rnaz
 };
 
@@ -46,7 +54,9 @@ function myTranslator(cmd: string, context: any, filename: any, callback: any): 
     const jscmd = JSWriter(b);
     console.log(jscmd);
     const script = new vm.Script(jscmd);
+    console.time('cmd');
     script.runInContext(ctext);
+    console.log('that took',console.timeEnd('cmd'),' seconds');
     console.log(inspect(ctext));
     callback("");
     //    console.log(jscmd);

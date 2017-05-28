@@ -157,7 +157,26 @@ class JSWalker {
             ret += '\nconsole.log(' + tree.lhs.identifier.name + ')';
         return ret;
     }
+    writeColonForStatement(tree: AST.ForStatement): string {
+        const ident = tree.expression.identifier.name;
+        const colon = tree.expression.expression as AST.InfixExpression;
+        let ret = 'let $' + ident + ' = new ColonGenerator(' +
+            'sv(' + this.writeExpression(colon.leftOperand) + ')' +
+            ',1,' +
+            'sv(' + this.writeExpression(colon.rightOperand) + '));\n';
+        ret += 'while (!$' + ident + '.done()) {\n';
+        ret += `    ${ident} = mks($${ident}.next());\n`;
+        ret += '}';
+        return ret;
+        ret += '  let ' + ident + ' = mks($' + ident + '.next());\n';
+        ret += this.writeBlock(tree.body);
+        ret += '}';
+        return ret;
+    }
     writeForStatement(tree: AST.ForStatement): string {
+        if ((tree.expression.expression.kind === AST.SyntaxKind.InfixExpression) &&
+            (tree.expression.expression.operator.kind === AST.SyntaxKind.ColonToken))
+            return this.writeColonForStatement(tree);
         let ret = 'for ' + tree.expression.identifier.name + ' = ' +
             this.writeExpression(tree.expression.expression) + '\n';
         ret += this.writeBlock(tree.body);
