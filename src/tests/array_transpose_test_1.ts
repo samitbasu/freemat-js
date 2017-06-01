@@ -1,8 +1,8 @@
 import { suite, test } from "mocha-typescript";
 import { assert } from "chai";
-import { FMArray, Get } from "../arrays";
+import { mkArray, FMArray, Get } from "../arrays";
 import { hermitian, transpose, conj } from "../math";
-import { mkv, rand_array, rand_array_complex } from "./test_utils";
+import { rand_array, rand_array_complex } from "./test_utils";
 
 
 function validate_transposed(C: FMArray, D: FMArray): void {
@@ -10,7 +10,7 @@ function validate_transposed(C: FMArray, D: FMArray): void {
     assert.equal(D.dims[1], C.dims[0]);
     for (let i = 1; i <= C.dims[0]; i++) {
         for (let j = 1; j <= C.dims[1]; j++) {
-            assert.deepEqual(Get(C, mkv([i, j])), Get(D, mkv([j, i])));
+            assert.deepEqual(Get(C, [i, j]), Get(D, [j, i]));
         }
     }
 }
@@ -20,7 +20,7 @@ function validate_hermitian(C: FMArray, D: FMArray): void {
     assert.equal(D.dims[1], C.dims[0]);
     for (let i = 1; i <= C.dims[0]; i++) {
         for (let j = 1; j <= C.dims[1]; j++) {
-            assert.deepEqual(Get(C, mkv([i, j])), conj(Get(D, mkv([j, i]))));
+            assert.deepEqual(Get(C, [i, j]), conj(Get(D, [j, i])));
         }
     }
 }
@@ -63,7 +63,7 @@ const cases = [
         gen: rand_array_complex
     }];
 
-const sizes = [2, 4, 8, 32, 100, 200];
+const sizes = [2, 4, 8, 32, 100];
 
 @suite
 export class TransposeTests {
@@ -74,7 +74,7 @@ export class TransposeTests {
                 const cols = op.col_size(dim);
                 const C = op.gen([rows, cols]);
                 const D = transpose(C);
-                validate_transposed(C, D);
+                validate_transposed(C, mkArray(D));
                 console.log("      Case: ", op.description, " size: ", rows, "x", cols);
             }
         }
@@ -86,7 +86,7 @@ export class TransposeTests {
                 const cols = op.col_size(dim);
                 const C = op.gen([rows, cols]);
                 const D = hermitian(C);
-                validate_hermitian(C, D);
+                validate_hermitian(C, mkArray(D));
                 console.log("      Case: ", op.description, " size: ", rows, "x", cols);
             }
         }

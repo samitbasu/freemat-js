@@ -8,12 +8,10 @@ import Tokenize from './scanner';
 import { Parser } from './parser';
 import { inspect } from 'util';
 import { ColonGenerator } from './colon';
+import {realScalar} from './arrays';
 const vm = require('vm');
 
 
-function sv(x: FMArray): number {
-    return x.real[0];
-}
 
 const sandbox = {
     mks: FnMakeScalarReal,
@@ -36,7 +34,7 @@ const sandbox = {
     gt: gt,
     eq: eq,
     ne: ne,
-    sv: sv,
+    sv: realScalar,
     rnaz: rnaz
 };
 
@@ -46,7 +44,7 @@ function zeros(dims: number[]): FMArray {
     return new FMArray(dims);
 }
 
-function myTranslator(cmd: string, context: any, filename: any, callback: any): void {
+function myTranslator(cmd: string, _context: any, _filename: any, callback: any): void {
     const tok = Tokenize(cmd);
     const pars = new Parser(tok, cmd);
     const b = pars.block();

@@ -1,10 +1,24 @@
-import { NumericArray, FMArray, MakeComplex, FnMakeScalarComplex, FnMakeScalarReal, ComputeBinaryOpOutputDim, Elements } from './arrays';
+import {
+    basicValue,
+    basic,
+    isFMArray,
+    mkArray,
+    NumericArray, FMArray, MakeComplex, FnMakeArrayFromCNumber ,
+    FnMakeScalarReal, ComputeBinaryOpOutputDim, Elements
+} from './arrays';
+import { FMValue } from './arrays';
 import { Operator } from './operators';
 
 function binop_complex_scalar(a: FMArray, b: FMArray, op: Operator): FMArray {
     // Type assertions added because Compiler doesn't know how we got here...
-    return FnMakeScalarComplex(op.op_complex(a.real[0], (a.imag as NumericArray)[0],
-        b.real[0], (b.imag as NumericArray)[0]));
+    return FnMakeArrayFromCNumber(op.op_complex({
+        real: a.real[0],
+        imag: (a.imag as NumericArray)[0]
+    },
+        {
+            real: b.real[0],
+            imag: (b.imag as NumericArray)[0]
+        }));
 }
 
 function binop_complex_vector(a: FMArray, b: FMArray, op: Operator): FMArray {
@@ -14,12 +28,16 @@ function binop_complex_vector(a: FMArray, b: FMArray, op: Operator): FMArray {
     const bincr = (b.length > 1) ? 1 : 0;
     const c = MakeComplex(new FMArray(cdims));
     for (let ndx = 0; ndx < clength; ndx++) {
-        const res = op.op_complex(a.real[ndx * aincr],
-            (a.imag as NumericArray)[ndx * aincr],
-            b.real[ndx * bincr],
-            (b.imag as NumericArray)[ndx * bincr]);
-        c.real[ndx] = res[0];
-        (c.imag as NumericArray)[ndx] = res[1];
+        const res = op.op_complex({
+            real: a.real[ndx * aincr],
+            imag: (a.imag as NumericArray)[ndx * aincr]
+        },
+            {
+                real: b.real[ndx * bincr],
+                imag: (b.imag as NumericArray)[ndx * bincr]
+            });
+        c.real[ndx] = res.real;
+        (c.imag as NumericArray)[ndx] = res.imag;
     }
     return c;
 }
@@ -31,7 +49,7 @@ function binop_complex(a: FMArray, b: FMArray, op: Operator): FMArray {
         return binop_complex_vector(a, b, op);
 }
 
-function binop_real_scalar(a: FMArray, b: FMArray, op: Operator): FMArray {
+function binop_real_scalar(a: FMArray, b: FMArray, op: Operator): FMValue {
     return FnMakeScalarReal(op.op_real(a.real[0], b.real[0]));
 }
 
@@ -47,14 +65,23 @@ function binop_real_vector(a: FMArray, b: FMArray, op: Operator): FMArray {
     return c;
 }
 
-function binop_real(a: FMArray, b: FMArray, op: Operator): FMArray {
+function binop_real(a: FMArray, b: FMArray, op: Operator): FMValue {
     if ((a.length === 1) && (b.length === 1))
         return binop_real_scalar(a, b, op);
     else
         return binop_real_vector(a, b, op);
 }
 
-export function BinOp(a: FMArray, b: FMArray, op: Operator): FMArray {
+function binop_basic(a: basic, b: basic, op: Operator): number {
+    return op.op_real(basicValue(a), basicValue(b));
+}
+
+//FIXME - test for (-1)^(0.5)
+export function BinOp(a: FMValue, b: FMValue, op: Operator): FMValue {
+    if (!isFMArray(a) && !isFMArray(b))
+        return binop_basic(a, b, op);
+    a = mkArray(a);
+    b = mkArray(b);
     if (a.imag || b.imag) {
         let acomp = MakeComplex(a);
         let bcomp = MakeComplex(b);

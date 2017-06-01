@@ -1,4 +1,4 @@
-import { suite, test, timeout } from "mocha-typescript";
+import { suite, test } from "mocha-typescript";
 
 import { FMArray, Set, Get, FnMakeScalarReal } from "../arrays";
 
@@ -6,7 +6,7 @@ import { plus, times, mtimes } from "../math";
 
 import { assert } from "chai";
 
-import { mkv, mat_equal, test_mat, test_mat_complex } from "./test_utils";
+import { mat_equal, test_mat, test_mat_complex } from "./test_utils";
 
 const mks = FnMakeScalarReal;
 
@@ -22,7 +22,7 @@ function matmul(A: FMArray, B: FMArray): FMArray {
         for (let col = 1; col <= Bcols; col++) {
             let accum = mks(0);
             for (let ndx = 1; ndx <= Acols; ndx++) {
-                accum = plus(accum, times(Get(A, mkv([row, ndx])), Get(B, mkv([ndx, col]))));
+                accum = plus(accum, times(Get(A, [row, ndx]), Get(B, [ndx, col])));
             }
             Set(C, [mks(row), mks(col)], accum);
         }

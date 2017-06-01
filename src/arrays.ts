@@ -1,3 +1,7 @@
+import { cnumber } from './complex';
+
+import {is_complex, is_scalar} from './inspect';
+
 export type NumericArray = Array<number> | Float64Array | Float32Array;
 
 export enum ArrayType {
@@ -163,27 +167,67 @@ export class FMArray {
     }
 };
 
+
+export type basic = number | boolean;
+
+export function length(x: FMValue): number {
+  if (isBasic(x)) return 1;
+  return x.length;
+}
+
+export function isBasic(x: FMValue): x is basic {
+    return (!isFMArray(x));
+}
+
+export function basicValue(x: basic): number {
+    if (typeof (x) === 'number') return x;
+    return (x ? 1 : 0);
+}
+
+export function realScalar(x : FMValue): number {
+    if (isBasic(x)) return basicValue(x);
+    return x.real[0];
+}
+
+export function imagScalar(x: FMValue): number {
+    if (isBasic(x)) return 0;
+    if (!x.imag) return 0;
+    return x.imag[0];
+}
+
+export type FMValue = FMArray | basic;
+
+
 export function MakeComplex(x: FMArray): FMArray {
     if (x.imag) return x;
     x.imag = AllocateNumericArray(x.length);
     return x;
 }
 
+/*
 export function FnMakeScalarReal(t: number): FMArray {
     let f = new FMArray(1);
     f.real[0] = t;
     return f;
+}*/
+
+export function FnMakeScalarReal(t: number): FMValue {
+    return t;
 }
 
-export function FnMakeScalarComplex(t: [number, number]): FMArray {
+export function FnMakeScalarComplex(real: number, imag: number): FMArray {
     let f = new FMArray(1);
-    f.real[0] = t[0];
-    f.imag = [t[1]];
+    f.real[0] = real;
+    f.imag = [imag];
     return f;
 }
 
-export function FnMakeScalarLogical(t: boolean): FMArray {
-    return new FMArray(1, t ? [1] : [0], undefined, ArrayType.Logical);
+export function FnMakeScalarLogical(t: boolean): FMValue {
+    return t;
+}
+
+export function FnMakeArrayFromCNumber(t: cnumber) : FMArray {
+  return FnMakeScalarComplex(t.real,t.imag)
 }
 
 function DimString(dims: number[]): string {
@@ -329,21 +373,16 @@ function Vectorize(x: FMArray): FMArray {
 
 // This covers the case A(i,j,k) = m,
 // where m is a scalar, and i, j, k are scalars too
-function SetNDimScalar(to: FMArray, where: FMArray[], what: FMArray): FMArray {
+function SetNDimScalar(to: FMArray, where: FMValue[], what: FMValue): FMArray {
     let scalars: number[] = [];
     for (let i = 0; i < where.length; i++) {
-        if (where[i].length !== 1)
-            throw "Unhandled set case";
-        scalars[i] = where[i].real[0];
+        scalars[i] = realScalar(where[i]);
     }
     let ndx = ComputeIndex(to.dims, scalars);
     if (ndx >= 0) {
-        to.real[ndx] = what.real[0];
+        to.real[ndx] = realScalar(what);
         if (to.imag) {
-            if (what.imag)
-                to.imag[ndx] = what.imag[0];
-            else
-                to.imag[ndx] = 0;
+            to.imag[ndx] = imagScalar(what);
             return RealDemote(to);
         }
         return to;
@@ -352,16 +391,20 @@ function SetNDimScalar(to: FMArray, where: FMArray[], what: FMArray): FMArray {
 
 }
 
-function GetNDimScalar(frm: FMArray, where: FMArray): FMArray {
-    let ndx = ComputeIndex(frm.dims, where.real);
+function GetNDimScalar(frm: FMArray, where: FMValue[]): FMValue {
+    let scalars: number[] = [];
+    for (let i=0;i < where.length;i++) {
+        scalars[i] = realScalar(where[i]);
+    }
+    let ndx = ComputeIndex(frm.dims, scalars);
     if (frm.imag) {
-        return FnMakeScalarComplex([frm.real[ndx], frm.imag[ndx]]);
+        return FnMakeScalarComplex(frm.real[ndx], frm.imag[ndx]);
     }
     return FnMakeScalarReal(frm.real[ndx]);
 }
 
-function SetScalar(to: FMArray, where: FMArray, what: FMArray): FMArray {
-    const ndx = where.real[0];
+function SetScalar(to: FMArray, where: FMValue, what: FMValue): FMArray {
+    const ndx = realScalar(where);
     if (ndx > to.length) {
         if (IsVector(to.dims)) {
             return SetScalar(Resize(to, VectorResizeDim(to.dims, ndx)), where, what);
@@ -369,8 +412,8 @@ function SetScalar(to: FMArray, where: FMArray, what: FMArray): FMArray {
             return SetScalar(Resize(Vectorize(to), [ndx, 1]), where, what);
         }
     }
-    if (!what.imag) {
-        to.real[ndx - 1] = what.real[0];
+    if (!is_complex(what)) {
+        to.real[ndx - 1] = realScalar( what);
         if (to.imag) {
             to.imag[ndx - 1] = 0;
             return RealDemote(to);
@@ -378,38 +421,53 @@ function SetScalar(to: FMArray, where: FMArray, what: FMArray): FMArray {
         return to;
     }
     if (to.imag) {
-        to.real[ndx - 1] = what.real[0];
-        to.imag[ndx - 1] = what.imag[0];
+        to.real[ndx - 1] = realScalar(what);
+        to.imag[ndx - 1] = imagScalar(what);
     }
     return to;
 }
 
-export function Set(to: FMArray, where: FMArray[], what: FMArray): FMArray {
+export function Set(to: FMValue, where: FMValue[], what: FMValue): FMArray {
+    // Target of a Set should always be an array
+    to = mkArray(to);
     // If we need complex promotion, do it first
-    if (what.imag && !to.imag) {
+    if (is_complex(what) && !is_complex(to)) {
         return Set(MakeComplex(to), where, what);
     }
     // Handle scalar case first
-    if ((where.length === 1) && (what.length === 1)) {
+    if ((where.length === 1) && (is_scalar(what))) {
         return SetScalar(to, where[0], what);
     }
-    if (what.length === 1) {
+    if (is_scalar(what)) {
         return SetNDimScalar(to, where, what);
     }
     throw new TypeError("Cannot apply Set function in this way");
 }
 
 
-export function Get(frm: FMArray, where: FMArray): FMArray {
-    if ((where.length === 1) && frm.imag) {
-        let n = where.real[0] - 1;
-        return FnMakeScalarComplex([frm.real[n], frm.imag[n]]);
-    }
-    if ((where.length === 1) && !frm.imag) {
-        let n = where.real[0] - 1;
+function GetScalar(frm: FMArray, where: FMValue): FMValue {
+    let n = realScalar(where) - 1;
+    if (frm.imag)
+        return FnMakeScalarComplex(frm.real[n], frm.imag[n]);
+    else
         return FnMakeScalarReal(frm.real[n]);
-    }
+}
+
+export function Get(frm: FMValue, where: FMValue[]): FMValue {
+    frm = mkArray(frm);
+    if (where.length === 1 && is_scalar(where[0]) )
+        return GetScalar(frm,where[0]);
     return GetNDimScalar(frm, where);
 }
 
+export function isFMArray(A: FMValue): A is FMArray {
+    return !((typeof (A) === 'number') ||
+        (typeof (A) === 'boolean'));
+}
 
+export function mkArray(A: FMValue): FMArray {
+    if (isFMArray(A)) return A;
+    if (typeof (A) === 'number')
+        return new FMArray(1, [A]);
+    return new FMArray(1, [A ? 1 : 0], undefined, ArrayType.Logical);
+}

@@ -1,6 +1,6 @@
 import { suite, test } from "mocha-typescript";
 
-import { FMArray, Set, Get, FnMakeScalarReal, FnMakeScalarComplex } from "../arrays";
+import { FMArray, realScalar, Set, Get, FnMakeScalarReal, FnMakeScalarComplex } from "../arrays";
 
 import { mldivide, times, minus } from "../math";
 
@@ -8,10 +8,6 @@ import { assert } from "chai";
 
 const mks = FnMakeScalarReal;
 const mkc = FnMakeScalarComplex;
-
-function mkv(p: number[]): FMArray {
-    return new FMArray([1, p.length], p);
-}
 
 const sizes = [2, 4, 8, 32, 100, 200];
 
@@ -32,9 +28,9 @@ export class MLDivideAssignments {
             const D = mldivide(C, B, console.log);
             for (let i = 1; i <= dim; i++) {
                 if (i % 2 == 0)
-                    assert.deepEqual(Get(D, mks(i)), mks(0));
+                    assert.deepEqual(Get(D, [mks(i)]), mks(0));
                 if (i % 2 == 1)
-                    assert.deepEqual(Get(D, mks(i)), mks(1));
+                    assert.deepEqual(Get(D, [mks(i)]), mks(1));
             }
         }
     }
@@ -42,28 +38,28 @@ export class MLDivideAssignments {
         for (let dim of [2, 4, 8, 32, 64, 128]) {
             let C = new FMArray([dim, dim]);
             for (let i = 1; i <= dim; i++) {
-                C = Set(C, [mks(i), mks(i)], mkc([1, 1]));
+                C = Set(C, [mks(i), mks(i)], mkc(1, 1));
                 if (i < dim)
-                    C = Set(C, [mks(i + 1), mks(i)], mkc([1, -1]));
+                    C = Set(C, [mks(i + 1), mks(i)], mkc(1, -1));
             }
             let B = new FMArray([dim, 1]);
             for (let i = 1; i <= dim; i++) {
-                B = Set(B, [mks(i)], mkc([i, -i]));
+                B = Set(B, [mks(i)], mkc(i, -i));
             }
             const D = mldivide(C, B, console.log);
             let T = new FMArray([dim, 1]);
-            let recip_alpha = mkc([0.5, -0.5]);
-            let beta = mkc([1, -1]);
+            let recip_alpha = mkc(0.5, -0.5);
+            let beta = mkc(1, -1);
             let prev = mks(0);
             for (let i = 1; i <= dim; i++) {
-                let tmp0 = Get(B, mks(i));
+                let tmp0 = Get(B, [mks(i)]);
                 let tmp1 = minus(tmp0, times(prev, beta));
                 let tmp2 = times(tmp1, recip_alpha);
                 T = Set(T, [mks(i)], tmp2);
-                prev = Get(T, mks(i));
+                prev = Get(T, [mks(i)]);
             }
             for (let i = 1; i <= dim; i++) {
-                assert.deepEqual(Get(T, mks(i)), Get(D, mks(i)));
+                assert.deepEqual(Get(T, [mks(i)]), Get(D, [mks(i)]));
             }
         };
     }
@@ -80,7 +76,7 @@ export class MLDivideAssignments {
             }
             const D = mldivide(C, B, console.log);
             for (let i = 1; i <= dim; i++) {
-                assert.closeTo(Get(D, mks(i)).real[0], (i + i + dim) / 2.0, 1e-10);
+                assert.closeTo(realScalar(Get(D, [mks(i)])), (i + i + dim) / 2.0, 1e-10);
             }
         };
     }
@@ -100,10 +96,10 @@ export class MLDivideAssignments {
             const D = mldivide(C, B, console.log);
             for (let i = 1; i <= dim; i++) {
                 for (let j = 1; j <= 4; j++) {
-                    const x = Get(B, mkv([i, j])).real[0];
-                    const y = Get(B, mkv([i + dim, j])).real[0];
+                    const x = realScalar(Get(B, [i, j]));
+                    const y = realScalar(Get(B, [i + dim, j]));
                     const p = (x + y) / 2.0;
-                    assert.closeTo(Get(D, mkv([i, j])).real[0], p, 1e-10);
+                    assert.closeTo(realScalar(Get(D, [i, j])), p, 1e-10);
                 }
             }
         }
@@ -121,8 +117,8 @@ export class MLDivideAssignments {
             }
             const D = mldivide(C, B, console.log);
             for (let i = 1; i <= dim; i++) {
-                assert.closeTo(Get(D, mks(i)).real[0], Get(B, mks(i)).real[0] / 2.0, 1e-10);
-                assert.closeTo(Get(D, mks(i + dim)).real[0], Get(B, mks(i)).real[0] / 2.0, 1e-10);
+                assert.closeTo(realScalar(Get(D, [mks(i)])), realScalar(Get(B, [mks(i)])) / 2.0, 1e-10);
+                assert.closeTo(realScalar(Get(D, [mks(i + dim)])), realScalar(Get(B, [mks(i)])) / 2.0, 1e-10);
             }
         }
     }

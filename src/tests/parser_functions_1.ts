@@ -1,7 +1,7 @@
 import { suite, test } from "mocha-typescript";
 import * as AST from "../ast";
 import { parse, assertCast } from "./test_utils";
-import { inspect } from "util";
+//import { inspect } from "util";
 
 const assert = require('chai').assert;
 

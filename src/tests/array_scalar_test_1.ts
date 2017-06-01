@@ -2,144 +2,139 @@ import { suite, test } from "mocha-typescript";
 
 import { assert } from "chai";
 
-import { Get, FMArray } from "../arrays";
+import { Get, FMValue, isFMArray, basicValue, length, realScalar, imagScalar } from "../arrays";
 
-import { cdiv, rand_array, rand_array_complex, test_mat, test_mat_complex, mks, mkc, mkl } from "./test_utils";
+import { rand_array, rand_array_complex, test_mat, test_mat_complex, mks, mkc, mkl } from "./test_utils";
 
 import { plus, minus, times, rdivide, ldivide, lt, gt, le, ge, eq, ne } from "../math";
 
-function real(x: FMArray): number {
-    return x.real[0];
-}
+import {cdiv} from '../complex';
 
-function imag(x: FMArray): number {
-    if (x.imag) return x.imag[0];
-    return 0;
-}
+import {is_complex, is_scalar} from '../inspect';
 
-function is_complex(x: FMArray): boolean {
-    return (x.imag !== undefined);
-}
-
-function is_scalar(x: FMArray): boolean {
-    return x.length === 1;
-}
 
 interface test_op {
     name: string,
-    func: (a: FMArray, b: FMArray) => FMArray,
-    op_real: (a: FMArray, b: FMArray) => FMArray,
-    op_complex: (a: FMArray, b: FMArray) => FMArray
+    func: (a: FMValue, b: FMValue) => FMValue,
+    op_real: (a: FMValue, b: FMValue) => FMValue,
+    op_complex: (a: FMValue, b: FMValue) => FMValue
 }
+
+const real = realScalar;
+const imag = imagScalar;
 
 const cases = [
     {
         name: 'addition',
         func: plus,
-        op_real: (a: FMArray, b: FMArray) => mks(real(a) + real(b)),
-        op_complex: (c: FMArray, d: FMArray) => mkc([real(c) + real(d), imag(c) + imag(d)])
+        op_real: (a: FMValue, b: FMValue) => mks(real(a) + real(b)),
+        op_complex: (c: FMValue, d: FMValue) => mkc(real(c) + real(d), imag(c) + imag(d))
     },
     {
         name: 'subtraction',
         func: minus,
-        op_real: (a: FMArray, b: FMArray) => mks(real(a) - real(b)),
-        op_complex: (c: FMArray, d: FMArray) => mkc([real(c) - real(d), imag(c) - imag(d)])
+        op_real: (a: FMValue, b: FMValue) => mks(real(a) - real(b)),
+        op_complex: (c: FMValue, d: FMValue) => mkc(real(c) - real(d), imag(c) - imag(d))
     },
     {
         name: 'element-wise multiplication',
         func: times,
-        op_real: (a: FMArray, b: FMArray) => mks(real(a) * real(b)),
-        op_complex: (c: FMArray, d: FMArray) =>
-            mkc([real(c) * real(d) - imag(c) * imag(d),
-            real(c) * imag(d) + imag(c) * real(d)])
+        op_real: (a: FMValue, b: FMValue) => mks(real(a) * real(b)),
+        op_complex: (c: FMValue, d: FMValue) =>
+            mkc(real(c) * real(d) - imag(c) * imag(d),
+                real(c) * imag(d) + imag(c) * real(d))
     },
     {
         name: 'element-wise right division',
         func: rdivide,
-        op_real: (a: FMArray, b: FMArray) => mks(real(a) / real(b)),
-        op_complex: (a: FMArray, b: FMArray) => {
+        op_real: (a: FMValue, b: FMValue) => mks(real(a) / real(b)),
+        op_complex: (a: FMValue, b: FMValue) => {
             const ar = real(a);
             const ai = imag(a);
             const br = real(b);
             const bi = imag(b);
-            const f = cdiv(ar, ai, br, bi);
-            return mkc([f[0], f[1]]);
+            const f = cdiv({real: ar, imag: ai}, {real: br, imag: bi});
+            return mkc(f.real,f.imag);
         },
     },
     {
         name: 'element-wise left division',
         func: ldivide,
-        op_real: (b: FMArray, a: FMArray) => mks(real(a) / real(b)),
-        op_complex: (b: FMArray, a: FMArray) => {
+        op_real: (b: FMValue, a: FMValue) => mks(real(a) / real(b)),
+        op_complex: (b: FMValue, a: FMValue) => {
             const ar = real(a);
             const ai = imag(a);
             const br = real(b);
             const bi = imag(b);
-            const f = cdiv(ar, ai, br, bi);
-            return mkc([f[0], f[1]]);
+            const f = cdiv({real: ar, imag: ai}, {real: br, imag: bi});
+            return mkc(f.real,f.imag);
         },
     },
     {
         name: 'less than',
         func: lt,
-        op_real: (a: FMArray, b: FMArray) => mkl(real(a) < real(b)),
-        op_complex: (a: FMArray, b: FMArray) => mkl(real(a) < real(b)),
+        op_real: (a: FMValue, b: FMValue) => mkl(real(a) < real(b)),
+        op_complex: (a: FMValue, b: FMValue) => mkl(real(a) < real(b)),
     },
     {
         name: 'greater than',
         func: gt,
-        op_real: (a: FMArray, b: FMArray) => mkl(real(a) > real(b)),
-        op_complex: (a: FMArray, b: FMArray) => mkl(real(a) > real(b)),
+        op_real: (a: FMValue, b: FMValue) => mkl(real(a) > real(b)),
+        op_complex: (a: FMValue, b: FMValue) => mkl(real(a) > real(b)),
     },
     {
         name: 'less equals',
         func: le,
-        op_real: (a: FMArray, b: FMArray) => mkl(real(a) <= real(b)),
-        op_complex: (a: FMArray, b: FMArray) => mkl(real(a) <= real(b)),
+        op_real: (a: FMValue, b: FMValue) => mkl(real(a) <= real(b)),
+        op_complex: (a: FMValue, b: FMValue) => mkl(real(a) <= real(b)),
     },
     {
         name: 'greater equals',
         func: ge,
-        op_real: (a: FMArray, b: FMArray) => mkl(real(a) >= real(b)),
-        op_complex: (a: FMArray, b: FMArray) => mkl(real(a) >= real(b)),
+        op_real: (a: FMValue, b: FMValue) => mkl(real(a) >= real(b)),
+        op_complex: (a: FMValue, b: FMValue) => mkl(real(a) >= real(b)),
     },
     {
         name: 'equals',
         func: eq,
-        op_real: (a: FMArray, b: FMArray) => mkl(real(a) === real(b)),
-        op_complex: (a: FMArray, b: FMArray) => mkl((real(a) === real(b)) && (imag(a) === imag(b))),
+        op_real: (a: FMValue, b: FMValue) => mkl(real(a) === real(b)),
+        op_complex: (a: FMValue, b: FMValue) => mkl((real(a) === real(b)) && (imag(a) === imag(b))),
     },
     {
         name: 'not equals',
         func: ne,
-        op_real: (a: FMArray, b: FMArray) => mkl(real(a) !== real(b)),
-        op_complex: (a: FMArray, b: FMArray) => mkl((real(a) !== real(b)) || (imag(a) !== imag(b))),
+        op_real: (a: FMValue, b: FMValue) => mkl(real(a) !== real(b)),
+        op_complex: (a: FMValue, b: FMValue) => mkl((real(a) !== real(b)) || (imag(a) !== imag(b))),
     }
 ];
 
 const fm_true = mkl(true);
 const fm_false = mkl(false);
 
-function scalar_equals(a: FMArray, b: FMArray): boolean {
+function scalar_equals(a: FMValue, b: FMValue): boolean {
     const c = eq(a, b);
-    return ((c.length === 1) &&
-        (c.real[0] === 1));
+    if (isFMArray(c))
+        return ((c.length === 1) &&
+            (c.real[0] === 1));
+    return (basicValue(c) !== 0);
 }
 
-function scalar_isNaN(a: FMArray): boolean {
+function scalar_isNaN(a: FMValue): boolean {
     const c = ne(a, a);
-    return ((c.length === 1) &&
-        (c.real[0] === 1));
+    if (isFMArray(c))
+        return ((c.length === 1) &&
+            (c.real[0] === 1));
+    return (basicValue(c) !== 0);
 }
 
-function vector_vector_test(a: FMArray, b: FMArray, op: test_op) {
+function vector_vector_test(a: FMValue, b: FMValue, op: test_op) {
     const complex_flag = (is_complex(a) || is_complex(b));
     const c = op.func(a, b);
-    for (let p = 1; p <= c.length; p++) {
-        const av = Get(a, mks(p));
-        const bv = Get(b, mks(p));
-        const cv = Get(c, mks(p));
-        let dv: FMArray;
+    for (let p = 1; p <= length(c); p++) {
+        const av = Get(a, [mks(p)]);
+        const bv = Get(b, [mks(p)]);
+        const cv = Get(c, [mks(p)]);
+        let dv: FMValue;
         if (complex_flag)
             dv = op.op_complex(av, bv);
         else
@@ -156,17 +151,17 @@ function vector_vector_test(a: FMArray, b: FMArray, op: test_op) {
     }
 }
 
-function scalar_vector_test(a: FMArray, b: FMArray, op: test_op) {
+function scalar_vector_test(a: FMValue, b: FMValue, op: test_op) {
     const complex_flag = (is_complex(a) || is_complex(b));
     const c = op.func(a, b);
-    for (let p = 1; p <= c.length; p++) {
-        const bv = Get(b, mks(p));
-        let cv: FMArray;
+    for (let p = 1; p <= length(c); p++) {
+        const bv = Get(b, [mks(p)]);
+        let cv: FMValue;
         if (complex_flag)
             cv = op.op_complex(a, bv);
         else
             cv = op.op_real(a, bv);
-        const dv = Get(c, mks(p));
+        const dv = Get(c, [mks(p)]);
         if (!(scalar_isNaN(cv) && scalar_isNaN(dv))) {
             if (!scalar_equals(cv, dv)) {
                 console.log(a);
@@ -179,17 +174,17 @@ function scalar_vector_test(a: FMArray, b: FMArray, op: test_op) {
     }
 }
 
-function vector_scalar_test(a: FMArray, b: FMArray, op: test_op) {
+function vector_scalar_test(a: FMValue, b: FMValue, op: test_op) {
     const complex_flag = (is_complex(a) || is_complex(b));
     const c = op.func(a, b);
-    for (let p = 1; p <= c.length; p++) {
-        const av = Get(a, mks(p));
-        let cv: FMArray;
+    for (let p = 1; p <= length(c); p++) {
+        const av = Get(a, [mks(p)]);
+        let cv: FMValue;
         if (complex_flag)
             cv = op.op_complex(av, b);
         else
             cv = op.op_real(av, b);
-        const dv = Get(c, mks(p));
+        const dv = Get(c, [mks(p)]);
         if (!(scalar_isNaN(cv) && scalar_isNaN(dv))) {
             if (!scalar_equals(cv, dv)) {
                 console.log(a);
@@ -202,7 +197,7 @@ function vector_scalar_test(a: FMArray, b: FMArray, op: test_op) {
     }
 }
 
-function vectest(a: FMArray, b: FMArray, op: test_op) {
+function vectest(a: FMValue, b: FMValue, op: test_op) {
     console.log("      -> Testing ", op.name);
     if (is_scalar(a)) return scalar_vector_test(a, b, op);
     if (is_scalar(b)) return vector_scalar_test(a, b, op);
@@ -211,17 +206,17 @@ function vectest(a: FMArray, b: FMArray, op: test_op) {
 
 
 @suite
-export class ScalarDoubleTests {
+export class ScalarTests {
     @test 'should have is_complex false for real values'() {
-        assert.isUndefined(mks(1).imag);
-    };
+        assert.isFalse(is_complex(mks(1)));
+    }
     @test 'should have is_complex true for complex values'() {
-        assert.isDefined(mkc([1, 3]).imag);
-    };
+        assert.isTrue(is_complex(mkc(1,3)));
+    }
     @test 'should have is_scalar true for real or complex scalars'() {
-        assert.equal(mks(1).length, 1);
-        assert.equal(mkc([1, 3]).length, 1);
-    };
+        assert.equal(length(mks(1)), 1);
+        assert.equal(length(mkc(1, 3)), 1);
+    }
     @test 'should return a logical true for equal real values'() {
         assert.deepEqual(eq(mks(5), mks(5)), fm_true);
     };
@@ -229,12 +224,13 @@ export class ScalarDoubleTests {
         assert.deepEqual(eq(mks(5), mks(7)), fm_false);
     };
     @test 'should return a logical true for equal complex values'() {
-        assert.deepEqual(eq(mkc([5, 2]), mkc([5, 2])), fm_true);
+         console.log("Compare result",eq(mkc(5,2),mkc(5,2)));
+       assert.deepEqual(eq(mkc(5, 2), mkc(5, 2)), fm_true);
     };
     @test 'should return a logical false for unequal complex values'() {
-        assert.deepEqual(eq(mkc([5, 2]), mkc([5, 1])), fm_false);
-        assert.deepEqual(eq(mkc([5, 2]), mkc([4, 2])), fm_false);
-        assert.deepEqual(eq(mkc([5, 2]), mkc([4, 1])), fm_false);
+        assert.deepEqual(eq(mkc(5, 2), mkc(5, 1)), fm_false);
+        assert.deepEqual(eq(mkc(5, 2), mkc(4, 2)), fm_false);
+        assert.deepEqual(eq(mkc(5, 2), mkc(4, 1)), fm_false);
     };
     @test 'should perform scalar operations correctly with real values'() {
         for (let op of cases) {
@@ -243,14 +239,14 @@ export class ScalarDoubleTests {
             let c = op.func(a, b);
             let d = op.op_real(a, b);
             assert.deepEqual(fm_true, eq(c, d));
-            assert.isUndefined(c.imag);
+            assert.isFalse(is_complex(c));
             console.log("      -> Testing ", op.name);
         }
     }
     @test 'should perform scalar operations correctly with complex values'() {
         for (let op of cases) {
-            let a = mkc([5, 3]);
-            let b = mkc([7, 6]);
+            let a = mkc(5, 3);
+            let b = mkc(7, 6);
             let c = op.func(a, b);
             let d = op.op_complex(a, b);
             assert.deepEqual(fm_true, eq(c, d));
@@ -260,7 +256,7 @@ export class ScalarDoubleTests {
     @test 'should perform scalar operations correctly with real and complex values'() {
         for (let op of cases) {
             let a = mks(5);
-            let b = mkc([7, 6]);
+            let b = mkc(7, 6);
             let c = op.func(a, b);
             let d = op.op_complex(a, b);
             assert.deepEqual(fm_true, eq(c, d));
@@ -287,14 +283,14 @@ export class ScalarDoubleTests {
     }
     @test 'should support broadcast a complex scalar over an array with real values'() {
         for (let op of cases) {
-            let c = mkc([5, 3]);
+            let c = mkc(5, 3);
             let d = test_mat(3, 4);
             vectest(c, d, op);
         }
     }
     @test 'should support broadcast over an array with complex values and a complex scalar'() {
         for (let op of cases) {
-            let c = mkc([5, 3]);
+            let c = mkc(5, 3);
             let d = test_mat_complex(3, 4);
             vectest(c, d, op);
         }
@@ -317,14 +313,14 @@ export class ScalarDoubleTests {
     @test 'should support broadcast over an array with real values and a complex scalar'() {
         for (let op of cases) {
             let c = test_mat(3, 4);
-            let d = mkc([5, 3]);
+            let d = mkc(5, 3);
             vectest(c, d, op);
         }
     }
     @test 'should support over an array with complex values and a complex scalar'() {
         for (let op of cases) {
             let c = test_mat_complex(3, 4);
-            let d = mkc([5, 3]);
+            let d = mkc(5, 3);
             assert.isTrue(is_complex(c));
             assert.isTrue(is_complex(d));
             vectest(c, d, op);
