@@ -4,6 +4,7 @@ import { le, ge, lt, gt, eq, ne } from './math';
 import { ncat } from './ncat';
 import { start } from 'repl';
 import { JSWriter } from './jswalker';
+import {Symbols} from './symbol'
 import Tokenize from './scanner';
 import { Parser } from './parser';
 import { inspect } from 'util';
@@ -38,7 +39,11 @@ const sandbox = {
     rnaz: rnaz
 };
 
-const ctext = new vm.createContext(sandbox);
+const context = {
+    global: sandbox
+}
+
+const ctext = new vm.createContext(context);
 
 function zeros(dims: number[]): FMArray {
     return new FMArray(dims);
@@ -51,6 +56,8 @@ function myTranslator(cmd: string, _context: any, _filename: any, callback: any)
     console.log(inspect(b, { depth: 10 }));
     const jscmd = JSWriter(b);
     console.log(jscmd);
+    const syms = Symbols(b);
+    console.log(syms);
     const script = new vm.Script(jscmd);
     console.time('cmd');
     script.runInContext(ctext);

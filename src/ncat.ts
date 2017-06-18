@@ -1,6 +1,9 @@
-import { FMArray } from './arrays';
+import { FMArray, mkArray, FMValue } from './arrays';
 
-export function ncat(args: FMArray[], dim: number): FMArray {
+export function ncat(args_v: FMValue[], dim: number): FMArray {
+    let args : FMArray[] = [];
+    for (let i = 0;i<args_v.length;i++)
+        args.push(mkArray(args_v[i]));
     if (args.length === 1)
         return args[0];
     let maxdims = 0;

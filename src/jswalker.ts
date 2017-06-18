@@ -1,6 +1,7 @@
 import * as AST from './ast';
 import { inspect } from 'util';
 
+
 class JSWalker {
     txt: string;
     indent: number;
@@ -36,7 +37,7 @@ class JSWalker {
         }
     }
     writeVariableDereference(tree: AST.VariableDereference): string {
-        let ret = tree.identifier.name;
+        let ret = '$ws.'+tree.identifier.name;
         ret += tree.deref.map((x) => this.writeDereferenceExpression(x)).join('');
         return ret;
     }
@@ -66,46 +67,46 @@ class JSWalker {
         }
     }
     writeInfixExpression(tree: AST.InfixExpression): string {
-        return this.operatorName(tree.operator) + '(' +
+        return '$ws.'+this.operatorName(tree.operator) + '(' +
             this.writeExpression(tree.leftOperand) + ',' +
             this.writeExpression(tree.rightOperand) + ')';
     }
     writePostfixExpression(tree: AST.PostfixExpression): string {
         switch (tree.operator.kind) {
             case AST.SyntaxKind.TransposeToken:
-                return 'transpose(' + this.writeExpression(tree.operand) + ')';
+                return '$ws.transpose(' + this.writeExpression(tree.operand) + ')';
             case AST.SyntaxKind.HermitianToken:
-                return 'hermitian(' + this.writeExpression(tree.operand) + ')';
+                return '$ws.hermitian(' + this.writeExpression(tree.operand) + ')';
         }
     }
     writePrefixExpression(tree: AST.UnaryExpression): string {
         switch (tree.operator) {
             case AST.SyntaxKind.UnaryPlusToken:
-                return 'pos(' + this.writeExpression(tree.operand) + ')';
+                return '$ws.pos(' + this.writeExpression(tree.operand) + ')';
             case AST.SyntaxKind.UnaryMinusToken:
-                return 'neg(' + this.writeExpression(tree.operand) + ')';
+                return '$ws.neg(' + this.writeExpression(tree.operand) + ')';
             case AST.SyntaxKind.NotToken:
-                return 'not(' + this.writeExpression(tree.operand) + ')';
+                return '$ws.not(' + this.writeExpression(tree.operand) + ')';
         }
     }
     writeMatDefinition(exp: AST.Expression[][], open: string, close: string): string {
         return open + exp.map((ex) => {
-            return 'ncat([' + this.writeExpressionList(ex) + '],1)';
+            return '$ws.ncat([' + this.writeExpressionList(ex) + '],1)';
         }).join(',') + close;
     }
     writeMatrixDefinition(tree: AST.MatrixDefinition): string {
         switch (tree.kind) {
             case AST.SyntaxKind.MatrixDefinition:
-                return this.writeMatDefinition(tree.expressions, 'ncat([', '],0)');
+                return this.writeMatDefinition(tree.expressions, '$ws.ncat([', '],0)');
             case AST.SyntaxKind.CellDefinition:
                 return this.writeMatDefinition(tree.expressions, '{', '}');
         }
     }
     writeFloatLiteral(tree: AST.LiteralExpression): string {
-        return 'mks(' + tree.text + ')';
+        return '$ws.mks(' + tree.text + ')';
     }
     writeIntegerLiteral(tree: AST.LiteralExpression): string {
-        return 'mks(' + tree.text + ')';
+        return '$ws.mks(' + tree.text + ')';
     }
     writeStringLiteral(tree: AST.LiteralExpression): string {
         return tree.text;
@@ -141,31 +142,32 @@ class JSWalker {
         return ret;
     }
     writeStraightAssignmentStatement(tree: AST.AssignmentStatement): string {
-        let ret = tree.lhs.identifier.name + ' = ';
+        let ret = '$ws.' + tree.lhs.identifier.name + ' = ';
         ret += this.writeExpression(tree.expression);
         if (tree.printit)
-            ret += '\nconsole.log(' + tree.lhs.identifier.name + ')';
+            ret += '\n$ws.console.log($ws.' + tree.lhs.identifier.name + ')';
         return ret;
     }
     writeAssignmentStatement(tree: AST.AssignmentStatement): string {
         if (tree.lhs.deref.length === 0)
             return this.writeStraightAssignmentStatement(tree);
-        let ret = tree.lhs.identifier.name + ' = Set(' + tree.lhs.identifier.name;
+        let ret = '$ws.' + tree.lhs.identifier.name + ' = Set($ws.' + tree.lhs.identifier.name;
         ret += ',' + '[' + tree.lhs.deref.map((x) => this.writeDereferenceExpression(x)).join(',') + '],';
         ret += this.writeExpression(tree.expression) + ')';
         if (tree.printit)
-            ret += '\nconsole.log(' + tree.lhs.identifier.name + ')';
+            ret += '\n$ws.console.log($ws.' + tree.lhs.identifier.name + ')';
         return ret;
     }
     writeColonForStatement(tree: AST.ForStatement): string {
         const ident = tree.expression.identifier.name;
         const colon = tree.expression.expression as AST.InfixExpression;
-        let ret = 'let $' + ident + ' = new ColonGenerator(' +
-            'sv(' + this.writeExpression(colon.leftOperand) + ')' +
+        let ret = 'let $' + ident + ' = new $ws.ColonGenerator(' +
+            '$ws.sv(' + this.writeExpression(colon.leftOperand) + ')' +
             ',1,' +
-            'sv(' + this.writeExpression(colon.rightOperand) + '));\n';
+            '$ws.sv(' + this.writeExpression(colon.rightOperand) + '));\n';
         ret += 'while (!$' + ident + '.done()) {\n';
-        ret += `    ${ident} = mks($${ident}.next());\n`;
+        ret += `$${ident}.next();\n`;
+        //ret += `    $ws.${ident} = $${ident}.next();\n`;
         ret += '}';
         return ret;
         ret += '  let ' + ident + ' = mks($' + ident + '.next());\n';
@@ -183,7 +185,7 @@ class JSWalker {
         return ret;
     }
     writeWhileStatement(tree: AST.WhileStatement): string {
-        let ret = 'while (rnaz(' + this.writeExpression(tree.expression) + '))\n';
+        let ret = 'while ($ws.rnaz(' + this.writeExpression(tree.expression) + '))\n';
         ret += this.writeBlock(tree.body);
         return ret;
     }
@@ -193,12 +195,12 @@ class JSWalker {
         return ret;
     }
     writeElseIfStatement(tree: AST.ElseIfStatement): string {
-        let ret = this.pad() + 'else if (rnaz(' + this.writeExpression(tree.expression) + '))\n';
+        let ret = this.pad() + 'else if ($ws.rnaz(' + this.writeExpression(tree.expression) + '))\n';
         ret += this.writeBlock(tree.body);
         return ret;
     }
     writeIfStatement(tree: AST.IfStatement): string {
-        let ret = 'if (rnaz(' + this.writeExpression(tree.expression) + '))\n';
+        let ret = 'if ($ws.rnaz(' + this.writeExpression(tree.expression) + '))\n';
         ret += this.writeBlock(tree.body);
         for (let elif of tree.elifs) {
             ret += this.writeElseIfStatement(elif as AST.ElseIfStatement);
@@ -210,7 +212,7 @@ class JSWalker {
     writeExpressionStatement(tree: AST.ExpressionStatement): string {
         let ret = this.writeExpression(tree.expression);
         if (tree.printit)
-            ret = 'console.log(' + ret + ')';
+            ret = '$ws.console.log(' + ret + ')';
         return ret;
     }
     writeCaseStatement(tree: AST.CaseStatement): string {
@@ -323,7 +325,8 @@ class JSWalker {
 export function JSWriter(tree: AST.Node): string {
     if (tree.kind === AST.SyntaxKind.Block) {
         let p = new JSWalker;
-        return p.writeBlock(tree as AST.Block);
+        let ret = '(function ($ws) {' +  p.writeBlock(tree as AST.Block) + '})(global);'
+        return ret;
     }
     return 'unknown\n';
 }

@@ -1,11 +1,10 @@
-import { Set, FMValue, FMArray, FnMakeScalarReal } from "../arrays";
+import { Set, FMValue, FMArray } from "../arrays";
 import { assert } from "chai";
 import { time_it, test_mat } from "./test_utils";
 import { suite, test } from "mocha-typescript";
 import { plus, mtimes } from "../math";
 
 let A: FMValue = new FMArray([512, 512, 10]);
-const mks = FnMakeScalarReal;
 
 @suite
 export class BasicTimingTests {
